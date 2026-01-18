@@ -72,16 +72,37 @@ echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━�
 echo -e "${GREEN}🔒 Шаг 2: Настройка SSL сертификата${NC}"
 echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 
-read -p "Настроить SSL сертификат сейчас? (y/n): " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-    if [ -f "$SCRIPT_DIR/setup-regru-ssl.sh" ]; then
-        bash "$SCRIPT_DIR/setup-regru-ssl.sh"
-    else
-        echo -e "${YELLOW}⚠️  Скрипт deploy/setup-regru-ssl.sh не найден, пропускаем${NC}"
-    fi
+# Проверка существующего SSL сертификата
+SSL_EXISTS=false
+CERT_PATH="/etc/letsencrypt/live/$DOMAIN/fullchain.pem"
+KEY_PATH="/etc/letsencrypt/live/$DOMAIN/privkey.pem"
+
+if [ -f "$CERT_PATH" ] && [ -f "$KEY_PATH" ]; then
+    echo -e "${GREEN}✅ SSL сертификат Let's Encrypt уже существует${NC}"
+    SSL_EXISTS=true
+elif [ -f "/etc/ssl/certs/$DOMAIN.crt" ] && [ -f "/etc/ssl/private/$DOMAIN.key" ]; then
+    echo -e "${GREEN}✅ SSL сертификат найден (другой источник)${NC}"
+    SSL_EXISTS=true
+elif [ -f "/etc/nginx/ssl/$DOMAIN.crt" ] && [ -f "/etc/nginx/ssl/$DOMAIN.key" ]; then
+    echo -e "${GREEN}✅ SSL сертификат найден${NC}"
+    SSL_EXISTS=true
+fi
+
+if [ "$SSL_EXISTS" = true ]; then
+    echo -e "${GREEN}✅ Используется существующий SSL сертификат${NC}"
+    echo -e "${YELLOW}💡 Пропускаем настройку SSL${NC}"
 else
-    echo -e "${YELLOW}⚠️  Пропущено. Настройте SSL позже${NC}"
+    read -p "Настроить SSL сертификат сейчас? (y/n): " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        if [ -f "$SCRIPT_DIR/setup-regru-ssl.sh" ]; then
+            bash "$SCRIPT_DIR/setup-regru-ssl.sh"
+        else
+            echo -e "${YELLOW}⚠️  Скрипт deploy/setup-regru-ssl.sh не найден, пропускаем${NC}"
+        fi
+    else
+        echo -e "${YELLOW}⚠️  Пропущено. Настройте SSL позже${NC}"
+    fi
 fi
 
 # Шаг 4: Клонирование репозитория
@@ -218,22 +239,40 @@ echo -e "${YELLOW}🚀 Запуск бота...${NC}"
 sudo -u $BOT_USER pm2 start index.js --name telegram-bot
 sudo -u $BOT_USER pm2 save
 
-# Шаг 8: Установка вебхука
+# Шаг 8: Установка вебхука (только если USE_WEBHOOK=true)
 echo ""
 echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${GREEN}📡 Шаг 7: Установка вебхука${NC}"
+echo -e "${GREEN}📡 Шаг 7: Проверка режима работы${NC}"
 echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 
-sleep 3  # Даем боту время запуститься
-
-# Убеждаемся, что мы в правильной директории
-if [ ! -d "$APP_DIR" ]; then
-    echo -e "${RED}❌ Директория $APP_DIR не существует!${NC}"
-    exit 1
+# Проверка режима работы из .env
+if [ -f "$APP_DIR/.env" ]; then
+    USE_WEBHOOK=$(grep "^USE_WEBHOOK=" "$APP_DIR/.env" | cut -d'=' -f2 | tr -d '"' | tr -d "'" || echo "false")
+    WEBHOOK_URL=$(grep "^WEBHOOK_URL=" "$APP_DIR/.env" | cut -d'=' -f2 | tr -d '"' | tr -d "'" || echo "")
+    
+    if [ "$USE_WEBHOOK" = "true" ] && [ ! -z "$WEBHOOK_URL" ]; then
+        echo -e "${GREEN}✅ Режим вебхука включен${NC}"
+        echo -e "${YELLOW}📡 Установка вебхука...${NC}"
+        
+        sleep 3  # Даем боту время запуститься
+        
+        # Убеждаемся, что мы в правильной директории
+        if [ ! -d "$APP_DIR" ]; then
+            echo -e "${RED}❌ Директория $APP_DIR не существует!${NC}"
+            exit 1
+        fi
+        
+        cd $APP_DIR
+        sudo -u $BOT_USER npm run webhook:set
+        echo -e "${GREEN}✅ Вебхук установлен${NC}"
+    else
+        echo -e "${GREEN}✅ Режим long polling (вебхук не требуется)${NC}"
+        echo -e "${YELLOW}💡 Бот работает в режиме long polling, вебхук не настраивается${NC}"
+    fi
+else
+    echo -e "${YELLOW}⚠️  Файл .env не найден, пропускаем установку вебхука${NC}"
+    echo -e "${YELLOW}💡 Для вебхука установите USE_WEBHOOK=true в .env${NC}"
 fi
-
-cd $APP_DIR
-sudo -u $BOT_USER npm run webhook:set
 
 # Финальная проверка
 echo ""
