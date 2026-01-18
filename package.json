@@ -12,7 +12,8 @@
     "dev": "node --watch index.js",
     "webhook:set": "node scripts/setWebhook.js",
     "webhook:delete": "node scripts/deleteWebhook.js",
-    "webhook:info": "node scripts/getWebhookInfo.js"
+    "webhook:info": "node scripts/getWebhookInfo.js",
+    "check": "node scripts/check-bot-status.js"
   },
   "keywords": [
     "telegram",
