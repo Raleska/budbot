@@ -329,17 +329,34 @@ initializeBot().then(async () => {
     // Удаляем вебхук, если он был установлен ранее
     try {
       const { deleteWebhook, getWebhookInfo } = await import('./utils/webhook.js');
+      console.log('🔍 Проверка наличия активного вебхука...');
       const webhookInfo = await getWebhookInfo(BOT_TOKEN);
-      if (webhookInfo.url) {
-        console.log('🗑️  Обнаружен активный вебхук, удаляем для перехода в long polling...');
+      if (webhookInfo && webhookInfo.url) {
+        console.log(`🗑️  Обнаружен активный вебхук: ${webhookInfo.url}`);
+        console.log('🗑️  Удаляем вебхук для перехода в long polling...');
         await deleteWebhook(BOT_TOKEN);
-        console.log('✅ Вебхук удален, запускаем long polling');
+        console.log('✅ Вебхук успешно удален');
+        // Небольшая задержка для завершения удаления на стороне Telegram
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        console.log('✅ Готово к запуску long polling');
+      } else {
+        console.log('✅ Вебхук не установлен, можно запускать long polling');
       }
     } catch (error) {
-      // Игнорируем ошибки при проверке/удалении вебхука
+      console.error('⚠️  Ошибка при проверке/удалении вебхука:', error.message);
       console.log('ℹ️  Продолжаем запуск в режиме long polling...');
+      // Пытаемся удалить вебхук принудительно
+      try {
+        const { deleteWebhook } = await import('./utils/webhook.js');
+        await deleteWebhook(BOT_TOKEN);
+        console.log('✅ Вебхук удален принудительно');
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      } catch (deleteError) {
+        console.log('ℹ️  Продолжаем без удаления вебхука...');
+      }
     }
     
+    console.log('🚀 Запуск бота в режиме long polling...');
     await bot.launch();
     console.log('✅ Бот успешно запущен!');
     console.log('📊 Аналитика пользователей активна');
