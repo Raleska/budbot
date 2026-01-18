@@ -31,6 +31,13 @@ if [ ! -d "$APP_DIR" ]; then
     exit 1
 fi
 
+# Проверка существования директории
+if [ ! -d "$APP_DIR" ]; then
+    echo -e "${RED}❌ Директория $APP_DIR не найдена!${NC}"
+    echo "Сначала выполните развертывание: sudo ./deploy/deploy-full.sh"
+    exit 1
+fi
+
 cd $APP_DIR
 
 # Проверка, что это Git репозиторий

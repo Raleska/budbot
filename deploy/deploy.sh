@@ -36,6 +36,11 @@ echo ""
 echo -e "${YELLOW}📦 Шаг 1: Обновление системы...${NC}"
 apt update && apt upgrade -y
 
+# Установка базовых утилит
+echo -e "${YELLOW}📦 Установка базовых утилит...${NC}"
+apt install -y curl wget build-essential software-properties-common
+echo -e "${GREEN}✅ Базовые утилиты установлены${NC}"
+
 # Шаг 2: Установка Node.js
 echo -e "${YELLOW}📦 Шаг 2: Установка Node.js...${NC}"
 if ! command -v node &> /dev/null; then
@@ -46,17 +51,25 @@ else
     echo -e "${GREEN}✅ Node.js уже установлен: $(node --version)${NC}"
 fi
 
-# Шаг 3: Установка PM2
-echo -e "${YELLOW}📦 Шаг 3: Установка PM2...${NC}"
+# Шаг 3: Создание пользователя для бота (нужно до установки PM2)
+echo -e "${YELLOW}👤 Шаг 3: Создание пользователя...${NC}"
+if ! id "$BOT_USER" &>/dev/null; then
+    useradd -m -s /bin/bash $BOT_USER
+    echo -e "${GREEN}✅ Пользователь $BOT_USER создан${NC}"
+else
+    echo -e "${GREEN}✅ Пользователь $BOT_USER уже существует${NC}"
+fi
+
+# Шаг 4: Установка PM2
+echo -e "${YELLOW}📦 Шаг 4: Установка PM2...${NC}"
 if ! command -v pm2 &> /dev/null; then
     npm install -g pm2
-    pm2 startup systemd -u $BOT_USER --hp /home/$BOT_USER
+    # Настройка автозапуска PM2 (после создания пользователя)
+    pm2 startup systemd -u $BOT_USER --hp /home/$BOT_USER || echo -e "${YELLOW}⚠️  PM2 startup настроен вручную${NC}"
     echo -e "${GREEN}✅ PM2 установлен${NC}"
 else
     echo -e "${GREEN}✅ PM2 уже установлен${NC}"
 fi
-
-# Шаг 4: Создание пользователя для бота
 echo -e "${YELLOW}👤 Шаг 4: Создание пользователя...${NC}"
 if ! id "$BOT_USER" &>/dev/null; then
     useradd -m -s /bin/bash $BOT_USER
@@ -94,14 +107,14 @@ fi
 # Шаг 8: Установка Certbot для SSL
 echo -e "${YELLOW}📦 Шаг 8: Установка Certbot...${NC}"
 if ! command -v certbot &> /dev/null; then
-    apt install -y certbot python3-certbot-nginx
+    apt install -y certbot python3 python3-pip python3-certbot-nginx
     echo -e "${GREEN}✅ Certbot установлен${NC}"
 else
     echo -e "${GREEN}✅ Certbot уже установлен${NC}"
 fi
 
 # Шаг 9: Настройка Nginx
-echo -e "${YELLOW}⚙️  Шаг 8: Настройка Nginx...${NC}"
+echo -e "${YELLOW}⚙️  Шаг 9: Настройка Nginx...${NC}"
 cat > $NGINX_SITES_DIR/$DOMAIN <<EOF
 server {
     listen 80;
@@ -141,7 +154,7 @@ nginx -t && systemctl reload nginx
 echo -e "${GREEN}✅ Конфигурация Nginx создана${NC}"
 
 # Шаг 10: Получение SSL сертификата
-echo -e "${YELLOW}🔒 Шаг 9: Настройка SSL сертификата...${NC}"
+echo -e "${YELLOW}🔒 Шаг 10: Настройка SSL сертификата...${NC}"
 echo -e "${YELLOW}⚠️  Если у вас уже есть SSL сертификат от Reg.ru, пропустите этот шаг${NC}"
 read -p "Получить бесплатный SSL сертификат от Let's Encrypt? (y/n): " -n 1 -r
 echo
@@ -153,7 +166,7 @@ else
 fi
 
 # Шаг 11: Настройка файрвола
-echo -e "${YELLOW}🔥 Шаг 10: Настройка файрвола...${NC}"
+echo -e "${YELLOW}🔥 Шаг 11: Настройка файрвола...${NC}"
 if command -v ufw &> /dev/null; then
     ufw allow 22/tcp
     ufw allow 80/tcp

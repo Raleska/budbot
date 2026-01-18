@@ -40,3 +40,9 @@ temp/
 # База данных (если есть локальные дампы)
 *.sql.backup
 *.dump
+
+# Локальные скрипты настройки (не коммитить)
+deploy/setup-https-auto.sh
+deploy/HTTPS_SETUP.md
+deploy/QUICK_START.md
+deploy/WEBHOOK_TROUBLESHOOTING.md
