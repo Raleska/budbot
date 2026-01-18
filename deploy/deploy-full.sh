@@ -124,6 +124,12 @@ if [ ! -d "$APP_DIR" ]; then
     echo -e "${GREEN}✅ Репозиторий клонирован${NC}"
 fi
 
+# Настройка Git safe.directory для работы от root (если нужно)
+echo -e "${YELLOW}🔧 Настройка Git безопасных директорий...${NC}"
+git config --global --add safe.directory $APP_DIR 2>/dev/null || true
+sudo -u $BOT_USER git config --global --add safe.directory $APP_DIR 2>/dev/null || true
+echo -e "${GREEN}✅ Git настроен${NC}"
+
 # Установка зависимостей
 echo -e "${YELLOW}📦 Установка зависимостей...${NC}"
 cd $APP_DIR

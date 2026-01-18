@@ -46,6 +46,11 @@ if [ ! -d ".git" ]; then
     exit 1
 fi
 
+# Настройка Git safe.directory для работы от root (если нужно)
+echo -e "${YELLOW}🔧 Проверка настроек Git...${NC}"
+git config --global --add safe.directory $APP_DIR 2>/dev/null || true
+sudo -u $BOT_USER git config --global --add safe.directory $APP_DIR 2>/dev/null || true
+
 echo -e "${YELLOW}📥 Получение обновлений из Git...${NC}"
 sudo -u $BOT_USER git fetch origin
 
