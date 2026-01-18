@@ -82,8 +82,17 @@ else
     echo -e "${GREEN}✅ Nginx уже установлен${NC}"
 fi
 
-# Шаг 7: Установка Certbot для SSL
-echo -e "${YELLOW}📦 Шаг 7: Установка Certbot...${NC}"
+# Шаг 7: Установка Git
+echo -e "${YELLOW}📦 Шаг 7: Установка Git...${NC}"
+if ! command -v git &> /dev/null; then
+    apt install -y git
+    echo -e "${GREEN}✅ Git установлен: $(git --version)${NC}"
+else
+    echo -e "${GREEN}✅ Git уже установлен: $(git --version)${NC}"
+fi
+
+# Шаг 8: Установка Certbot для SSL
+echo -e "${YELLOW}📦 Шаг 8: Установка Certbot...${NC}"
 if ! command -v certbot &> /dev/null; then
     apt install -y certbot python3-certbot-nginx
     echo -e "${GREEN}✅ Certbot установлен${NC}"
@@ -91,7 +100,7 @@ else
     echo -e "${GREEN}✅ Certbot уже установлен${NC}"
 fi
 
-# Шаг 8: Настройка Nginx
+# Шаг 9: Настройка Nginx
 echo -e "${YELLOW}⚙️  Шаг 8: Настройка Nginx...${NC}"
 cat > $NGINX_SITES_DIR/$DOMAIN <<EOF
 server {
@@ -131,7 +140,7 @@ ln -sf $NGINX_SITES_DIR/$DOMAIN $NGINX_ENABLED_DIR/$DOMAIN
 nginx -t && systemctl reload nginx
 echo -e "${GREEN}✅ Конфигурация Nginx создана${NC}"
 
-# Шаг 9: Получение SSL сертификата
+# Шаг 10: Получение SSL сертификата
 echo -e "${YELLOW}🔒 Шаг 9: Настройка SSL сертификата...${NC}"
 echo -e "${YELLOW}⚠️  Если у вас уже есть SSL сертификат от Reg.ru, пропустите этот шаг${NC}"
 read -p "Получить бесплатный SSL сертификат от Let's Encrypt? (y/n): " -n 1 -r
@@ -143,7 +152,7 @@ else
     echo -e "${YELLOW}⚠️  Пропущено. Убедитесь, что SSL сертификат настроен вручную${NC}"
 fi
 
-# Шаг 10: Настройка файрвола
+# Шаг 11: Настройка файрвола
 echo -e "${YELLOW}🔥 Шаг 10: Настройка файрвола...${NC}"
 if command -v ufw &> /dev/null; then
     ufw allow 22/tcp
@@ -159,13 +168,15 @@ echo ""
 echo -e "${GREEN}✅ Базовая настройка сервера завершена!${NC}"
 echo ""
 echo -e "${YELLOW}📝 Следующие шаги:${NC}"
-echo "1. Скопируйте файлы проекта в $APP_DIR"
-echo "2. Создайте файл .env с настройками (см. deploy/env.production.example)"
-echo "3. Установите зависимости: cd $APP_DIR && npm install"
-echo "4. Если используете SSL от Reg.ru, запустите: ./deploy/setup-regru-ssl.sh"
-echo "5. Запустите бота: sudo -u $BOT_USER pm2 start index.js --name telegram-bot"
-echo "6. Сохраните PM2: sudo -u $BOT_USER pm2 save"
-echo "7. Установите вебхук: npm run webhook:set"
+echo "1. Клонируйте репозиторий: git clone https://github.com/Raleska/budbot.git $APP_DIR"
+echo "2. Запустите полный скрипт развертывания: sudo ./deploy/deploy-full.sh"
+echo "   Или вручную:"
+echo "   - Создайте файл .env с настройками (см. deploy/env.production.example)"
+echo "   - Установите зависимости: cd $APP_DIR && npm install"
+echo "   - Если используете SSL от Reg.ru, запустите: ./deploy/setup-regru-ssl.sh"
+echo "   - Запустите бота: sudo -u $BOT_USER pm2 start index.js --name telegram-bot"
+echo "   - Сохраните PM2: sudo -u $BOT_USER pm2 save"
+echo "   - Установите вебхук: npm run webhook:set"
 echo ""
 echo -e "${GREEN}📚 Документация:${NC}"
 echo "   - Настройка вебхука: README_WEBHOOK.md"
