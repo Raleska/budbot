@@ -73,10 +73,24 @@ echo -e "${GREEN}✅ Резервная копия создана: $BACKUP_DIR${
 echo -e "${YELLOW}⏸️  Остановка бота...${NC}"
 sudo -u $BOT_USER pm2 stop telegram-bot || true
 
+# Сохранение .env перед обновлением
+if [ -f "$APP_DIR/.env" ]; then
+    echo -e "${YELLOW}💾 Сохранение .env файла...${NC}"
+    cp $APP_DIR/.env $APP_DIR/.env.backup
+fi
+
 # Обновление кода
 echo -e "${YELLOW}🔄 Обновление кода...${NC}"
 sudo -u $BOT_USER git reset --hard origin/$GIT_BRANCH
 sudo -u $BOT_USER git clean -fd
+
+# Восстановление .env после обновления
+if [ -f "$APP_DIR/.env.backup" ]; then
+    echo -e "${YELLOW}💾 Восстановление .env файла...${NC}"
+    mv $APP_DIR/.env.backup $APP_DIR/.env
+    chown $BOT_USER:$BOT_USER $APP_DIR/.env
+    echo -e "${GREEN}✅ .env файл сохранен${NC}"
+fi
 
 # Установка зависимостей
 echo -e "${YELLOW}📦 Проверка зависимостей...${NC}"
