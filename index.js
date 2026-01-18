@@ -325,6 +325,21 @@ initializeBot().then(async () => {
     // Режим long polling (по умолчанию)
     console.log('🔄 Запуск в режиме long polling...');
     console.log('ℹ️  Вебхук не будет настроен (режим long polling)');
+    
+    // Удаляем вебхук, если он был установлен ранее
+    try {
+      const { deleteWebhook, getWebhookInfo } = await import('./utils/webhook.js');
+      const webhookInfo = await getWebhookInfo(BOT_TOKEN);
+      if (webhookInfo.url) {
+        console.log('🗑️  Обнаружен активный вебхук, удаляем для перехода в long polling...');
+        await deleteWebhook(BOT_TOKEN);
+        console.log('✅ Вебхук удален, запускаем long polling');
+      }
+    } catch (error) {
+      // Игнорируем ошибки при проверке/удалении вебхука
+      console.log('ℹ️  Продолжаем запуск в режиме long polling...');
+    }
+    
     await bot.launch();
     console.log('✅ Бот успешно запущен!');
     console.log('📊 Аналитика пользователей активна');
@@ -340,32 +355,40 @@ initializeBot().then(async () => {
 });
 
 // Graceful shutdown
-process.once('SIGINT', () => {
+process.once('SIGINT', async () => {
   console.log('🛑 Получен сигнал SIGINT, завершение работы...');
-  if (USE_WEBHOOK) {
-    import('./utils/webhook.js').then(({ deleteWebhook }) => {
-      deleteWebhook(BOT_TOKEN).finally(() => {
-        process.exit(0);
-      });
-    });
-  } else {
-    bot.stop('SIGINT').finally(() => {
-      process.exit(0);
-    });
+  try {
+    if (USE_WEBHOOK) {
+      const { deleteWebhook } = await import('./utils/webhook.js');
+      await deleteWebhook(BOT_TOKEN);
+    } else {
+      const stopPromise = bot.stop('SIGINT');
+      if (stopPromise && typeof stopPromise.then === 'function') {
+        await stopPromise;
+      }
+    }
+  } catch (error) {
+    console.error('Ошибка при завершении работы:', error);
+  } finally {
+    process.exit(0);
   }
 });
 
-process.once('SIGTERM', () => {
+process.once('SIGTERM', async () => {
   console.log('🛑 Получен сигнал SIGTERM, завершение работы...');
-  if (USE_WEBHOOK) {
-    import('./utils/webhook.js').then(({ deleteWebhook }) => {
-      deleteWebhook(BOT_TOKEN).finally(() => {
-        process.exit(0);
-      });
-    });
-  } else {
-    bot.stop('SIGTERM').finally(() => {
-      process.exit(0);
-    });
+  try {
+    if (USE_WEBHOOK) {
+      const { deleteWebhook } = await import('./utils/webhook.js');
+      await deleteWebhook(BOT_TOKEN);
+    } else {
+      const stopPromise = bot.stop('SIGTERM');
+      if (stopPromise && typeof stopPromise.then === 'function') {
+        await stopPromise;
+      }
+    }
+  } catch (error) {
+    console.error('Ошибка при завершении работы:', error);
+  } finally {
+    process.exit(0);
   }
 });
