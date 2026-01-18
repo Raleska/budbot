@@ -1,0 +1,35 @@
+{
+  "name": "bot_damir_remind",
+  "version": "1.0.0",
+  "description": "Telegram bot for vitamin reminders",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "start:memory": "cross-env USE_DATABASE=false node index.js",
+    "start:webhook": "cross-env USE_WEBHOOK=true node index.js",
+    "start:webhook:memory": "cross-env USE_WEBHOOK=true USE_DATABASE=false node index.js",
+    "dev": "node --watch index.js",
+    "webhook:set": "node scripts/setWebhook.js",
+    "webhook:delete": "node scripts/deleteWebhook.js",
+    "webhook:info": "node scripts/getWebhookInfo.js"
+  },
+  "keywords": [
+    "telegram",
+    "bot",
+    "vitamins",
+    "reminder"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "node-cron": "^3.0.3",
+    "pg": "^8.11.3",
+    "telegraf": "^4.15.3"
+  },
+  "devDependencies": {
+    "cross-env": "^10.1.0"
+  }
+}
