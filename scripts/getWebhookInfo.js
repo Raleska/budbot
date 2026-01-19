@@ -1,5 +1,3 @@
-// Скрипт для получения информации о вебхуке
-
 import 'dotenv/config';
 import { getWebhookInfo } from '../utils/webhook.js';
 

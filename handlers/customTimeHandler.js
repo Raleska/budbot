@@ -10,12 +10,8 @@ export const customTimeHandler = async (ctx) => {
   const state = await userStateService.getState(userId);
   const keyboard = keyboards.confirmation();
 
-  // Валидация времени
   if (!isValidTime(text)) {
-    await ctx.reply(
-      TEXTS.INVALID_TIME_FORMAT,
-      keyboards.customTimeInput()
-    );
+    await ctx.reply(TEXTS.INVALID_TIME_FORMAT, keyboards.customTimeInput());
     return;
   }
 

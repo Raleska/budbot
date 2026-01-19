@@ -1,9 +1,5 @@
-// In-memory сервис для сбора аналитики (без БД)
+const userData = new Map();
 
-// In-memory хранилище
-const userData = new Map(); // userId -> analytics data
-
-// Обновление последнего взаимодействия
 export async function trackInteraction(userId, telegramData = {}) {
   if (!userData.has(userId)) {
     userData.set(userId, {
@@ -35,13 +31,11 @@ export async function trackInteraction(userId, telegramData = {}) {
   data.activeDays.add(today);
   data.lastActiveDate = today;
   
-  // Обновляем данные пользователя, если они изменились
   if (telegramData.username) data.username = telegramData.username;
   if (telegramData.first_name) data.firstName = telegramData.first_name;
   if (telegramData.last_name) data.lastName = telegramData.last_name;
 }
 
-// Отслеживание настройки напоминания
 export async function trackReminderSetup(userId, reminderData) {
   const data = userData.get(userId) || {};
   if (!userData.has(userId)) {
@@ -64,7 +58,6 @@ export async function trackReminderSetup(userId, reminderData) {
   }
 }
 
-// Отслеживание изменения напоминания
 export async function trackReminderChange(userId) {
   const data = userData.get(userId);
   if (data) {
@@ -72,7 +65,6 @@ export async function trackReminderChange(userId) {
   }
 }
 
-// Отслеживание выбора часового пояса
 export async function trackTimezoneSelection(userId, timezone) {
   const data = userData.get(userId);
   if (data) {
@@ -80,12 +72,9 @@ export async function trackTimezoneSelection(userId, timezone) {
   }
 }
 
-// Отслеживание выбора времени (оставляем для совместимости)
 export async function trackTimeSelection(userId, time) {
-  // Не реализовано в памяти
 }
 
-// Получение данных пользователя
 export async function getUserData(userId) {
   const data = userData.get(userId);
   if (!data) return null;
@@ -108,12 +97,10 @@ export async function getUserData(userId) {
   };
 }
 
-// Получение всех данных (для аналитики)
 export async function getAllUserData() {
   return Array.from(userData.values());
 }
 
-// Получение статистики
 export async function getStatistics() {
   const users = Array.from(userData.values());
   const totalUsers = users.length;
@@ -164,10 +151,8 @@ export async function getStatistics() {
   };
 }
 
-// Экспорт данных в JSON
 export async function exportData() {
   const data = await getAllUserData();
-  // Преобразуем Set в массив для JSON
   const serialized = data.map(u => ({
     ...u,
     activeDays: u.activeDays ? Array.from(u.activeDays) : [],

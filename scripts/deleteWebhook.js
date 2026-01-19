@@ -1,5 +1,3 @@
-// Скрипт для удаления вебхука
-
 import 'dotenv/config';
 import { deleteWebhook, getWebhookInfo } from '../utils/webhook.js';
 

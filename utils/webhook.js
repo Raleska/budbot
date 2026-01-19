@@ -1,22 +1,9 @@
-// Утилиты для управления вебхуком Telegram бота
-
 import { Telegraf } from 'telegraf';
 
-/**
- * Установка вебхука
- */
 export async function setWebhook(botToken, webhookUrl, secretToken = null) {
   const bot = new Telegraf(botToken);
   
   try {
-    const options = {
-      url: webhookUrl,
-    };
-    
-    if (secretToken) {
-      options.secret_token = secretToken;
-    }
-    
     await bot.telegram.setWebhook(webhookUrl, {
       secret_token: secretToken,
     });
@@ -32,9 +19,6 @@ export async function setWebhook(botToken, webhookUrl, secretToken = null) {
   }
 }
 
-/**
- * Удаление вебхука
- */
 export async function deleteWebhook(botToken) {
   const bot = new Telegraf(botToken);
   
@@ -48,9 +32,6 @@ export async function deleteWebhook(botToken) {
   }
 }
 
-/**
- * Получение информации о вебхуке
- */
 export async function getWebhookInfo(botToken) {
   const bot = new Telegraf(botToken);
   
@@ -63,11 +44,7 @@ export async function getWebhookInfo(botToken) {
   }
 }
 
-/**
- * Создание Express приложения для вебхука
- */
 export async function createWebhookServer(bot, options = {}) {
-  // Динамический импорт express (чтобы не требовался для polling режима)
   const express = (await import('express')).default;
   
   const app = express();
@@ -75,10 +52,8 @@ export async function createWebhookServer(bot, options = {}) {
   const path = options.path || process.env.WEBHOOK_PATH || '/webhook';
   const secretToken = options.secretToken || process.env.WEBHOOK_SECRET_TOKEN;
   
-  // Middleware для парсинга JSON
   app.use(express.json());
   
-  // Middleware для проверки secret token (если указан)
   if (secretToken) {
     app.use((req, res, next) => {
       const token = req.headers['x-telegram-bot-api-secret-token'];
@@ -89,7 +64,6 @@ export async function createWebhookServer(bot, options = {}) {
     });
   }
   
-  // Эндпоинт для вебхука
   app.post(path, async (req, res) => {
     try {
       await bot.handleUpdate(req.body);
@@ -100,12 +74,10 @@ export async function createWebhookServer(bot, options = {}) {
     }
   });
   
-  // Health check эндпоинт
   app.get('/health', (req, res) => {
     res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
   });
   
-  // Запуск сервера
   app.listen(port, () => {
     console.log(`🌐 Вебхук сервер запущен на порту ${port}`);
     console.log(`📡 Эндпоинт: http://localhost:${port}${path}`);

@@ -1,9 +1,6 @@
-// Репозиторий для работы с состояниями пользователей
-
 import { query } from '../connection.js';
 
 export const userStateRepository = {
-  // Создать или обновить состояние пользователя
   async upsertState(userId, state, userData = {}) {
     const result = await query(
       `INSERT INTO user_states (user_id, state, user_data, updated_at)
@@ -19,7 +16,6 @@ export const userStateRepository = {
     return result.rows[0];
   },
 
-  // Получить состояние пользователя
   async getState(userId) {
     const result = await query(
       'SELECT * FROM user_states WHERE user_id = $1',
@@ -34,7 +30,6 @@ export const userStateRepository = {
     return null;
   },
 
-  // Обновить только данные пользователя (без изменения состояния)
   async updateUserData(userId, userData) {
     const current = await this.getState(userId);
     const mergedData = current ? { ...current.userData, ...userData } : userData;
@@ -43,7 +38,6 @@ export const userStateRepository = {
     return await this.upsertState(userId, state, mergedData);
   },
 
-  // Удалить состояние пользователя
   async deleteState(userId) {
     const result = await query(
       'DELETE FROM user_states WHERE user_id = $1 RETURNING *',

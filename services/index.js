@@ -1,24 +1,16 @@
-// Централизованный экспорт сервисов в зависимости от режима БД
-
-const USE_DATABASE = process.env.USE_DATABASE !== 'false'; // По умолчанию true
+const USE_DATABASE = process.env.USE_DATABASE !== 'false';
 
 let userStateService, reminderService, analyticsService;
 
 if (USE_DATABASE) {
-  // Режим с БД
   const userStateModule = await import('./userState.js');
   userStateService = userStateModule.userStateService;
-  
   reminderService = await import('./reminderService.js');
-  
   analyticsService = await import('./userAnalytics.js');
 } else {
-  // Режим без БД (in-memory)
   const userStateModule = await import('./userStateMemory.js');
   userStateService = userStateModule.userStateServiceMemory;
-  
   reminderService = await import('./reminderServiceMemory.js');
-  
   analyticsService = await import('./userAnalyticsMemory.js');
 }
 

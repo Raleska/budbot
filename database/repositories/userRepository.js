@@ -1,9 +1,6 @@
-// Репозиторий для работы с пользователями
-
 import { query } from '../connection.js';
 
 export const userRepository = {
-  // Создать или обновить пользователя
   async upsertUser(userId, userData) {
     const { username, firstName, lastName } = userData;
     const result = await query(
@@ -21,7 +18,6 @@ export const userRepository = {
     return result.rows[0];
   },
 
-  // Получить пользователя по ID
   async getUserById(userId) {
     const result = await query(
       'SELECT * FROM users WHERE user_id = $1',

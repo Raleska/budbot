@@ -7,10 +7,7 @@ import { normalizeTime } from '../utils/validators.js';
 export const activeRemindersHandler = async (ctx) => {
   const userId = ctx.from.id;
   
-  // Собираем аналитику
   await trackInteraction(userId, ctx.from);
-  
-  // Получаем активное напоминание пользователя
   const reminder = await getReminder(userId);
   
   if (!reminder) {
@@ -25,32 +22,20 @@ export const activeRemindersHandler = async (ctx) => {
     return;
   }
   
-  // Создаем кнопки со временем напоминаний
   const buttons = [];
-  
-  // Нормализуем время для отображения
   const time1 = normalizeTime(reminder.time1);
   const time2 = reminder.time2 ? normalizeTime(reminder.time2) : null;
   
-  // Первое время
   buttons.push([
-    Markup.button.callback(
-      `⏰ ${time1}`,
-      `action:reminder_detail:time1`
-    ),
+    Markup.button.callback(`⏰ ${time1}`, `action:reminder_detail:time1`),
   ]);
   
-  // Второе время (если есть)
   if (time2) {
     buttons.push([
-      Markup.button.callback(
-        `⏰ ${time2}`,
-        `action:reminder_detail:time2`
-      ),
+      Markup.button.callback(`⏰ ${time2}`, `action:reminder_detail:time2`),
     ]);
   }
   
-  // Кнопка "Главное меню"
   buttons.push([
     Markup.button.callback(BUTTONS.MAIN_MENU, 'action:main_menu'),
   ]);

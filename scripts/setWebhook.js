@@ -1,5 +1,3 @@
-// Скрипт для установки вебхука
-
 import 'dotenv/config';
 import { setWebhook, getWebhookInfo } from '../utils/webhook.js';
 
@@ -19,7 +17,6 @@ if (!WEBHOOK_URL) {
   process.exit(1);
 }
 
-// Проверка формата BOT_TOKEN
 if (!BOT_TOKEN.match(/^\d+:[A-Za-z0-9_-]+$/)) {
   console.error('❌ Ошибка: BOT_TOKEN имеет неправильный формат!');
   console.error('   Формат должен быть: 123456789:ABCdefGHIjklMNOpqrsTUVwxyz');
@@ -29,7 +26,6 @@ if (!BOT_TOKEN.match(/^\d+:[A-Za-z0-9_-]+$/)) {
 
 const fullWebhookUrl = `${WEBHOOK_URL}${WEBHOOK_PATH}`;
 
-// Проверка формата URL
 if (!fullWebhookUrl.startsWith('https://')) {
   console.error('❌ Ошибка: WEBHOOK_URL должен начинаться с https://');
   console.error('   Telegram требует HTTPS для вебхуков');
@@ -50,7 +46,6 @@ if (WEBHOOK_SECRET_TOKEN) {
   console.warn('⚠️  Secret Token не установлен (рекомендуется для безопасности)');
 }
 
-// Функция для проверки доступности URL
 async function checkUrlAvailability(urlString) {
   try {
     const https = await import('https');
@@ -65,7 +60,6 @@ async function checkUrlAvailability(urlString) {
         timeout: 5000
       }, (res) => {
         if (res.statusCode === 200 || res.statusCode === 404 || res.statusCode === 405) {
-          // 404/405 нормальны для POST эндпоинта при GET запросе
           console.log('   ✅ URL доступен (статус:', res.statusCode + ')');
           resolve(true);
         } else {
@@ -94,9 +88,7 @@ async function checkUrlAvailability(urlString) {
   }
 }
 
-// Основная функция установки вебхука
 async function setupWebhook() {
-  // Проверка доступности URL перед установкой
   console.log('\n🔍 Проверка доступности URL...');
   await checkUrlAvailability(fullWebhookUrl);
   
@@ -146,7 +138,6 @@ async function setupWebhook() {
   });
 }
 
-// Запуск
 setupWebhook().catch((error) => {
   console.error('❌ Критическая ошибка:', error);
   process.exit(1);

@@ -1,13 +1,9 @@
-// In-memory сервис для управления напоминаниями (без БД)
-
 import cron from 'node-cron';
 import { TEXTS } from '../config/texts.js';
 
-// In-memory хранилище
-const reminders = new Map(); // userId -> reminderData
-const cronJobs = new Map(); // userId -> cron job instances
+const reminders = new Map();
+const cronJobs = new Map();
 
-// Конвертация часового пояса в смещение UTC
 function getTimezoneOffset(timezone) {
   if (!timezone) return 0;
   const match = timezone.match(/UTC([+-])(\d+(?:\.\d+)?)/);
@@ -20,7 +16,6 @@ function getTimezoneOffset(timezone) {
   return sign * hours;
 }
 
-// Конвертация времени из часового пояса пользователя в UTC
 function convertToUTC(time, timezone) {
   if (!time || typeof time !== 'string') {
     console.error('Ошибка: время не указано или имеет неверный формат:', time);
@@ -46,7 +41,6 @@ function convertToUTC(time, timezone) {
   let utcHours = hours - offset;
   let utcMinutes = minutes;
   
-  // Обработка перехода через полночь
   if (utcHours < 0) {
     utcHours += 24;
   } else if (utcHours >= 24) {
@@ -56,43 +50,33 @@ function convertToUTC(time, timezone) {
   return `${String(utcHours).padStart(2, '0')}:${String(utcMinutes).padStart(2, '0')}`;
 }
 
-// Создание cron выражения из времени
 function createCronExpression(time) {
   const [hours, minutes] = time.split(':').map(Number);
   return `${minutes} ${hours} * * *`;
 }
 
-// Отправка напоминания пользователю
 async function sendReminder(bot, userId, reminder) {
   try {
     const message = TEXTS.REMINDER_MESSAGE(reminder.capsules);
     await bot.telegram.sendMessage(userId, message, { parse_mode: 'HTML' });
   } catch (error) {
     console.error(`Ошибка при отправке напоминания пользователю ${userId}:`, error);
-    // Если пользователь заблокировал бота, удаляем напоминание
     if (error.response?.error_code === 403) {
       await removeReminder(userId);
     }
   }
 }
 
-// Добавление напоминания
 export async function addReminder(bot, userId, reminderData) {
-  // Удаляем старое напоминание, если есть
-  await removeReminder(userId);
-  
-  // Сохраняем напоминание
-  reminders.set(userId, reminderData);
-  
-  // Останавливаем старые cron jobs
-  const oldJobs = cronJobs.get(userId);
-  if (oldJobs) {
-    oldJobs.forEach(job => job.stop());
+  const existingJobs = cronJobs.get(userId);
+  if (existingJobs) {
+    existingJobs.forEach(job => job.stop());
+    cronJobs.delete(userId);
   }
   
-  const jobs = [];
+  reminders.set(userId, reminderData);
   
-  // Первое время
+  const jobs = [];
   const utcTime1 = convertToUTC(reminderData.time1, reminderData.timezone);
   const cronExpr1 = createCronExpression(utcTime1);
   
@@ -108,7 +92,6 @@ export async function addReminder(bot, userId, reminderData) {
   
   jobs.push(job1);
   
-  // Второе время (если есть)
   if (reminderData.time2) {
     const utcTime2 = convertToUTC(reminderData.time2, reminderData.timezone);
     const cronExpr2 = createCronExpression(utcTime2);
@@ -137,7 +120,6 @@ export async function addReminder(bot, userId, reminderData) {
   });
 }
 
-// Удаление напоминания
 export async function removeReminder(userId) {
   const jobs = cronJobs.get(userId);
   if (jobs) {
@@ -148,17 +130,14 @@ export async function removeReminder(userId) {
   console.log(`🗑️ Напоминание удалено для пользователя ${userId}`);
 }
 
-// Получение напоминания
 export async function getReminder(userId) {
   return reminders.get(userId) || null;
 }
 
-// Проверка наличия напоминания
 export async function hasReminder(userId) {
   return reminders.has(userId);
 }
 
-// Получение всех напоминаний
 export async function getAllReminders() {
   return Array.from(reminders.entries()).map(([userId, data]) => ({
     user_id: userId,
@@ -166,9 +145,6 @@ export async function getAllReminders() {
   }));
 }
 
-// Загрузка всех напоминаний (для режима без БД не требуется)
 export async function loadAllReminders(bot) {
-  // В режиме без БД напоминания хранятся только в памяти
-  // При перезапуске они теряются
   console.log('ℹ️ Режим без БД: напоминания хранятся только в памяти');
 }

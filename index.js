@@ -15,7 +15,6 @@ import { BUTTONS, TEXTS } from './config/texts.js';
 import { keyboards } from './utils/keyboards.js';
 import { Markup } from 'telegraf';
 
-// Получаем токен бота из переменной окружения
 const BOT_TOKEN = process.env.BOT_TOKEN;
 
 if (!BOT_TOKEN) {
@@ -26,41 +25,29 @@ if (!BOT_TOKEN) {
 
 const bot = new Telegraf(BOT_TOKEN);
 
-// Middleware для автоматического добавления Markdown форматирования ко всем сообщениям
 bot.use(async (ctx, next) => {
-  // Сохраняем оригинальные методы
   const originalReply = ctx.reply.bind(ctx);
   const originalEditMessageText = ctx.editMessageText.bind(ctx);
   
-  // Переопределяем ctx.reply для добавления parse_mode
   ctx.reply = async function(text, extra = {}) {
-    // Если extra - это объект Markup (имеет reply_markup), добавляем parse_mode
-    // Если extra - это обычный объект опций, также добавляем parse_mode
     if (extra && typeof extra === 'object') {
       return originalReply(text, { ...extra, parse_mode: 'HTML' });
     }
-    // Если extra не передан или не объект, создаем объект опций
     return originalReply(text, { parse_mode: 'HTML' });
   };
   
-  // Переопределяем ctx.editMessageText для добавления parse_mode
   ctx.editMessageText = async function(text, extra = {}) {
-    // Если extra - это объект Markup (имеет reply_markup), добавляем parse_mode
-    // Если extra - это обычный объект опций, также добавляем parse_mode
     if (extra && typeof extra === 'object') {
       return originalEditMessageText(text, { ...extra, parse_mode: 'HTML' });
     }
-    // Если extra не передан или не объект, создаем объект опций
     return originalEditMessageText(text, { parse_mode: 'HTML' });
   };
   
   return next();
 });
 
-// Определение режима работы с БД
-const USE_DATABASE = process.env.USE_DATABASE !== 'false'; // По умолчанию true, если не указано false
+const USE_DATABASE = process.env.USE_DATABASE !== 'false';
 
-// Импорт сервисов через централизованный модуль
 const {
   userStateService,
   trackInteraction,
@@ -69,21 +56,16 @@ const {
   removeReminder,
 } = await import('./services/index.js');
 
-// Инициализация бота при старте
 async function initializeBot() {
   try {
     if (USE_DATABASE) {
-      // Режим с БД
       console.log('🔌 Подключение к базе данных...');
       const { ensureDatabaseInitialized } = await import('./database/init.js');
       
       try {
-        // ensureDatabaseInitialized сама проверит подключение и создаст БД/таблицы при необходимости
         await ensureDatabaseInitialized();
-        
         console.log('📋 Загрузка активных напоминаний из БД...');
         await loadAllReminders(bot.telegram);
-        
         console.log('✅ Инициализация с БД завершена');
       } catch (dbError) {
         console.error('❌ Ошибка подключения к базе данных:', dbError.message);
@@ -101,7 +83,6 @@ async function initializeBot() {
         throw new Error('Не удалось подключиться к базе данных. Используйте режим без БД или настройте PostgreSQL.');
       }
     } else {
-      // Режим без БД (in-memory)
       console.log('💾 Режим работы: in-memory (без базы данных)');
       console.log('⚠️  Данные будут храниться только в памяти и потеряются при перезапуске');
       await loadAllReminders(bot.telegram);
@@ -113,19 +94,15 @@ async function initializeBot() {
   }
 }
 
-// Обработчик команды /start
 bot.start(startHandler);
 
-// Обработчик нажатий на inline-кнопки
 bot.action(/^action:/, async (ctx) => {
   const userId = ctx.from.id;
   const callbackData = ctx.callbackQuery.data;
   
-  // Собираем аналитику (незаметно для пользователя)
   await trackInteraction(userId, ctx.from);
   
   try {
-    // Обработка callback_data
     if (callbackData === 'action:start_vitamins') {
       await dosageHandler(ctx);
     } else if (callbackData === 'action:about_company') {
@@ -133,17 +110,15 @@ bot.action(/^action:/, async (ctx) => {
     } else if (callbackData === 'action:active_reminders') {
       await activeRemindersHandler(ctx);
     } else if (callbackData === 'action:edit_capsules') {
-      // Переход к выбору частоты приема для редактирования
       const reminder = await getReminder(userId);
       const userData = await userStateService.getUserData(userId);
       if (reminder) {
-        // Сохраняем данные существующего напоминания и сохраняем editingTimeKey для возврата
         await userStateService.updateUserData(userId, {
           capsules: reminder.capsules,
           timezone: reminder.timezone,
           time1: reminder.time1,
           time2: reminder.time2,
-          editingTimeKey: userData.editingTimeKey || 'time1', // Сохраняем для возврата
+          editingTimeKey: userData.editingTimeKey || 'time1',
         });
       }
       await userStateService.setState(userId, USER_STATES.SELECT_DOSAGE);
@@ -152,7 +127,6 @@ bot.action(/^action:/, async (ctx) => {
         keyboards.dosageSelection()
       );
     } else if (callbackData === 'action:edit_time') {
-      // Переход к выбору времени для редактирования
       const userData = await userStateService.getUserData(userId);
       const reminder = await getReminder(userId);
       
@@ -164,7 +138,6 @@ bot.action(/^action:/, async (ctx) => {
         return;
       }
       
-      // Сохраняем данные существующего напоминания
       await userStateService.updateUserData(userId, {
         capsules: reminder.capsules,
         timezone: reminder.timezone,
@@ -173,7 +146,6 @@ bot.action(/^action:/, async (ctx) => {
         editingTimeKey: userData.editingTimeKey,
       });
       
-      // Определяем, какое время редактируем
       if (userData.editingTimeKey === 'time1') {
         await userStateService.setState(userId, USER_STATES.SELECT_TIME_SINGLE);
         await ctx.editMessageText(
@@ -188,12 +160,10 @@ bot.action(/^action:/, async (ctx) => {
         );
       }
     } else if (callbackData === 'action:delete_reminder') {
-      // Удаление напоминания
       await removeReminder(userId);
       await userStateService.reset(userId);
       await userStateService.setState(userId, USER_STATES.START);
       
-      // Показываем только кнопку "Главное меню"
       const deleteKeyboard = Markup.inlineKeyboard([
         [Markup.button.callback(BUTTONS.MAIN_MENU, 'action:main_menu')],
       ]);
@@ -203,7 +173,6 @@ bot.action(/^action:/, async (ctx) => {
         deleteKeyboard
       );
     } else if (callbackData.startsWith('action:reminder_detail:')) {
-      // Извлекаем ключ времени после "action:reminder_detail:" (например, "time1" или "time2")
       const timeKey = callbackData.replace('action:reminder_detail:', '');
       await reminderDetailHandler(ctx, timeKey);
     } else if (callbackData === 'action:one_capsule') {
@@ -219,11 +188,9 @@ bot.action(/^action:/, async (ctx) => {
         keyboards.dosageSelection()
       );
     } else if (callbackData.startsWith('action:timezone:')) {
-      // Извлекаем часовой пояс после "action:timezone:" (например, "UTC+3")
       const timezone = callbackData.replace('action:timezone:', '');
       await timezoneHandler(ctx, timezone);
     } else if (callbackData.startsWith('action:time:')) {
-      // Извлекаем время после "action:time:" (может быть "08:00", "12:00" и т.д.)
       const time = callbackData.replace('action:time:', '');
       await timeSelectionHandler(ctx, time);
     } else if (callbackData === 'action:custom_time') {
@@ -272,7 +239,6 @@ bot.action(/^action:/, async (ctx) => {
       await startHandler(ctx);
     }
     
-    // Подтверждаем получение callback
     await ctx.answerCbQuery();
   } catch (error) {
     console.error('Ошибка при обработке callback:', error);
@@ -280,16 +246,13 @@ bot.action(/^action:/, async (ctx) => {
   }
 });
 
-// Обработчик текстовых сообщений (только для ввода времени)
 bot.on('text', async (ctx) => {
   const userId = ctx.from.id;
   const state = await userStateService.getState(userId);
   
-  // Собираем аналитику (незаметно для пользователя)
   await trackInteraction(userId, ctx.from);
 
   try {
-    // Обрабатываем только состояния ввода времени
     if (
       state === USER_STATES.ENTER_CUSTOM_TIME_SINGLE ||
       state === USER_STATES.ENTER_CUSTOM_TIME_FIRST ||
@@ -297,7 +260,6 @@ bot.on('text', async (ctx) => {
     ) {
       await customTimeHandler(ctx);
     } else {
-      // Для всех остальных случаев отправляем подсказку
       await ctx.reply('Пожалуйста, используйте кнопки для навигации или отправьте /start для начала');
     }
   } catch (error) {
@@ -306,38 +268,31 @@ bot.on('text', async (ctx) => {
   }
 });
 
-// Обработка ошибок
 bot.catch((err, ctx) => {
   console.error('Ошибка в боте:', err);
   ctx.reply('Произошла ошибка. Попробуйте еще раз.');
 });
 
-// Настройка административных команд (опционально)
 import { setupAdminCommands } from './utils/adminCommands.js';
 setupAdminCommands(bot);
 
-// Определение режима запуска (webhook или polling)
 const USE_WEBHOOK = process.env.USE_WEBHOOK === 'true';
 const WEBHOOK_URL = process.env.WEBHOOK_URL;
 const WEBHOOK_PORT = parseInt(process.env.WEBHOOK_PORT || '3000');
 const WEBHOOK_PATH = process.env.WEBHOOK_PATH || '/webhook';
 const WEBHOOK_SECRET_TOKEN = process.env.WEBHOOK_SECRET_TOKEN;
 
-// Запуск бота
 initializeBot().then(async () => {
   if (USE_WEBHOOK && WEBHOOK_URL) {
-    // Режим вебхука
     console.log('🌐 Запуск в режиме вебхука...');
     const { createWebhookServer, setWebhook } = await import('./utils/webhook.js');
     
-    // Создаем Express сервер для вебхука
     await createWebhookServer(bot, {
       port: WEBHOOK_PORT,
       path: WEBHOOK_PATH,
       secretToken: WEBHOOK_SECRET_TOKEN,
     });
     
-    // Устанавливаем вебхук
     const fullWebhookUrl = `${WEBHOOK_URL}${WEBHOOK_PATH}`;
     await setWebhook(BOT_TOKEN, fullWebhookUrl, WEBHOOK_SECRET_TOKEN);
     
@@ -350,11 +305,9 @@ initializeBot().then(async () => {
     }
     console.log(`🔗 Вебхук URL: ${fullWebhookUrl}`);
   } else {
-    // Режим long polling (по умолчанию)
     console.log('🔄 Запуск в режиме long polling...');
     console.log('ℹ️  Вебхук не будет настроен (режим long polling)');
     
-    // Удаляем вебхук, если он был установлен ранее
     try {
       const { deleteWebhook, getWebhookInfo } = await import('./utils/webhook.js');
       console.log('🔍 Проверка наличия активного вебхука...');
@@ -364,7 +317,6 @@ initializeBot().then(async () => {
         console.log('🗑️  Удаляем вебхук для перехода в long polling...');
         await deleteWebhook(BOT_TOKEN);
         console.log('✅ Вебхук успешно удален');
-        // Небольшая задержка для завершения удаления на стороне Telegram
         await new Promise(resolve => setTimeout(resolve, 1000));
         console.log('✅ Готово к запуску long polling');
       } else {
@@ -373,7 +325,6 @@ initializeBot().then(async () => {
     } catch (error) {
       console.error('⚠️  Ошибка при проверке/удалении вебхука:', error.message);
       console.log('ℹ️  Продолжаем запуск в режиме long polling...');
-      // Пытаемся удалить вебхук принудительно
       try {
         const { deleteWebhook } = await import('./utils/webhook.js');
         await deleteWebhook(BOT_TOKEN);
@@ -399,7 +350,6 @@ initializeBot().then(async () => {
   process.exit(1);
 });
 
-// Graceful shutdown
 process.once('SIGINT', async () => {
   console.log('🛑 Получен сигнал SIGINT, завершение работы...');
   try {

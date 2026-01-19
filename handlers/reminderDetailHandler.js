@@ -8,10 +8,7 @@ import { normalizeTime } from '../utils/validators.js';
 export const reminderDetailHandler = async (ctx, timeKey) => {
   const userId = ctx.from.id;
   
-  // Собираем аналитику
   await trackInteraction(userId, ctx.from);
-  
-  // Получаем активное напоминание пользователя
   const reminder = await getReminder(userId);
   
   if (!reminder) {
@@ -22,11 +19,9 @@ export const reminderDetailHandler = async (ctx, timeKey) => {
     return;
   }
   
-  // Определяем время для отображения и нормализуем его
   const rawTime = timeKey === 'time1' ? reminder.time1 : reminder.time2;
   const time = normalizeTime(rawTime);
   
-  // Сохраняем выбранное время в состоянии для дальнейшего редактирования
   await userStateService.updateUserData(userId, { 
     editingTimeKey: timeKey,
     editingTime: time,

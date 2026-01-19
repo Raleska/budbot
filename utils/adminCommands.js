@@ -1,9 +1,5 @@
-// Административные команды для просмотра аналитики
-// Эти команды можно использовать для получения статистики
-
 import { getStatistics, getAllUserData, getUserData, exportData } from '../services/index.js';
 
-// Список ID администраторов (замените на свои)
 const ADMIN_IDS = process.env.ADMIN_IDS ? process.env.ADMIN_IDS.split(',').map(id => parseInt(id.trim())) : [];
 
 export function isAdmin(userId) {
@@ -11,7 +7,6 @@ export function isAdmin(userId) {
 }
 
 export function setupAdminCommands(bot) {
-  // Команда для получения статистики
   bot.command('stats', async (ctx) => {
     if (!isAdmin(ctx.from.id)) {
       return;
@@ -40,7 +35,6 @@ ${stats.popularTimes.map(({ time, count }) => `  ${time}: ${count}`).join('\n')}
     await ctx.reply(message);
   });
   
-  // Команда для получения данных конкретного пользователя
   bot.command('user', async (ctx) => {
     if (!isAdmin(ctx.from.id)) {
       return;
@@ -82,14 +76,12 @@ Username: @${userData.username || 'не указан'}
     await ctx.reply(message);
   });
   
-  // Команда для экспорта всех данных
   bot.command('export', async (ctx) => {
     if (!isAdmin(ctx.from.id)) {
       return;
     }
     
     const data = await exportData();
-    // Отправляем как файл или текстом (если файл слишком большой)
     if (data.length < 4096) {
       await ctx.reply(`<pre>${data}</pre>`, { parse_mode: 'HTML' });
     } else {

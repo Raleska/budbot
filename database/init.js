@@ -1,5 +1,3 @@
-// Инициализация базы данных
-
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -11,10 +9,8 @@ import { query, testConnection } from './connection.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Список обязательных таблиц
 const REQUIRED_TABLES = ['users', 'user_states', 'reminders', 'user_analytics'];
 
-// Проверка наличия всех таблиц
 export async function checkTablesExist() {
   try {
     const result = await query(`
@@ -42,7 +38,6 @@ export async function checkTablesExist() {
   }
 }
 
-// Проверка наличия функции update_updated_at_column
 export async function checkFunctionExists() {
   try {
     const result = await query(`
@@ -59,7 +54,6 @@ export async function checkFunctionExists() {
   }
 }
 
-// Функция для настройки SSL (дублируем из connection.js)
 function getSslConfig() {
   const useSsl = process.env.DB_SSL === 'true' || process.env.DB_SSL === '1';
   
@@ -76,12 +70,11 @@ function getSslConfig() {
   try {
     const cert = readFileSync(certPath, 'utf-8');
     sslConfig.ca = cert;
-  } catch (error) {
-    if (process.env.DB_SSL_CA) {
-      console.warn(`⚠️  SSL сертификат не найден по пути: ${certPath}`);
-    }
-    // Для облачных БД без сертификата отключаем проверку
-    const dbHost = process.env.DB_HOST || 'localhost';
+    } catch (error) {
+      if (process.env.DB_SSL_CA) {
+        console.warn(`⚠️  SSL сертификат не найден по пути: ${certPath}`);
+      }
+      const dbHost = process.env.DB_HOST || 'localhost';
     if (dbHost !== 'localhost' && !dbHost.startsWith('127.0.0.1')) {
       console.warn('   Отключаем проверку сертификата для облачной БД');
       sslConfig.rejectUnauthorized = false;
@@ -91,7 +84,6 @@ function getSslConfig() {
   return sslConfig;
 }
 
-// Проверка существования базы данных
 export async function checkDatabaseExists() {
   const dbName = process.env.DB_NAME || 'bot_remind';
   const dbHost = process.env.DB_HOST || 'localhost';
@@ -99,12 +91,9 @@ export async function checkDatabaseExists() {
   const dbUser = process.env.DB_USER || 'postgres';
   const dbPassword = process.env.DB_PASSWORD || '';
 
-  // Для облачных БД (не localhost) сначала пробуем подключиться напрямую
-  // так как доступ к системной БД postgres может быть ограничен
   const isCloudDb = dbHost !== 'localhost' && !dbHost.startsWith('127.0.0.1');
   
   if (isCloudDb) {
-    // Для облачных БД пробуем подключиться напрямую
     try {
       const sslConfig = getSslConfig();
       const testPool = new Pool({
@@ -119,14 +108,12 @@ export async function checkDatabaseExists() {
       
       await testPool.query('SELECT 1');
       await testPool.end();
-      return true; // БД существует и доступна
+      return true;
     } catch (e) {
-      // Если подключение не удалось, БД либо не существует, либо недоступна
       return false;
     }
   }
 
-  // Для локальных БД пробуем проверить через системную БД postgres
   try {
     const sslConfig = getSslConfig();
     const adminPool = new Pool({
@@ -147,7 +134,6 @@ export async function checkDatabaseExists() {
     
     return result.rows.length > 0;
   } catch (error) {
-    // Если не удалось подключиться к postgres, пробуем подключиться напрямую к нужной БД
     try {
       const sslConfig = getSslConfig();
       const testPool = new Pool({
@@ -169,7 +155,6 @@ export async function checkDatabaseExists() {
   }
 }
 
-// Создание базы данных
 export async function createDatabase() {
   const dbName = process.env.DB_NAME || 'bot_remind';
   const dbHost = process.env.DB_HOST || 'localhost';
@@ -180,7 +165,6 @@ export async function createDatabase() {
   try {
     console.log(`📦 Создание базы данных "${dbName}"...`);
     
-    // Подключаемся к системной базе данных postgres
     const sslConfig = getSslConfig();
     const adminPool = new Pool({
       host: dbHost,
@@ -192,7 +176,6 @@ export async function createDatabase() {
       connectionTimeoutMillis: 5000,
     });
 
-    // Проверяем, существует ли база данных
     const checkResult = await adminPool.query(`
       SELECT 1 FROM pg_database WHERE datname = $1
     `, [dbName]);
@@ -203,7 +186,6 @@ export async function createDatabase() {
       return true;
     }
 
-    // Создаем базу данных
     await adminPool.query(`CREATE DATABASE ${dbName}`);
     await adminPool.end();
     
@@ -225,23 +207,18 @@ export async function createDatabase() {
   }
 }
 
-// Проверка и инициализация базы данных
 export async function ensureDatabaseInitialized() {
   try {
-    // Проверяем подключение к базе данных (это также проверит существование БД)
     const connected = await testConnection();
     if (!connected) {
-      // Если подключение не удалось, пробуем проверить существование БД
       const dbExists = await checkDatabaseExists();
       
       if (!dbExists) {
         console.log('📦 База данных не найдена, пытаемся создать автоматически...');
         try {
           await createDatabase();
-          // Небольшая задержка для завершения создания БД
           await new Promise(resolve => setTimeout(resolve, 1000));
           
-          // Повторно проверяем подключение после создания БД
           const reconnected = await testConnection();
           if (!reconnected) {
             throw new Error('Не удалось подключиться к только что созданной базе данных');
@@ -258,7 +235,6 @@ export async function ensureDatabaseInitialized() {
 
     console.log('🔍 Проверка структуры базы данных...');
     
-    // Проверяем наличие таблиц
     const tablesCheck = await checkTablesExist();
     
     if (!tablesCheck.allExist) {
@@ -269,7 +245,6 @@ export async function ensureDatabaseInitialized() {
       return true;
     }
     
-    // Проверяем наличие функции
     const functionExists = await checkFunctionExists();
     if (!functionExists) {
       console.log('📦 Обнаружена отсутствующая функция update_updated_at_column');
@@ -287,20 +262,16 @@ export async function ensureDatabaseInitialized() {
   }
 }
 
-// Инициализация схемы БД
 export async function initDatabase() {
   try {
-    // Проверяем подключение
     const connected = await testConnection();
     if (!connected) {
       throw new Error('Не удалось подключиться к базе данных');
     }
 
-    // Читаем SQL схему
     const schemaPath = join(__dirname, 'schema.sql');
     const schema = readFileSync(schemaPath, 'utf-8');
 
-    // Выполняем SQL схему
     await query(schema);
     
     console.log('✅ База данных успешно инициализирована');

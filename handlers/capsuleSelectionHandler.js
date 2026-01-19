@@ -7,67 +7,46 @@ export const capsuleSelectionHandler = async (ctx, capsuleType) => {
   const userId = ctx.from.id;
   const keyboard = keyboards.timezoneSelection();
   
-  // Проверяем, редактируем ли мы существующее напоминание
   const existingReminder = await getReminder(userId);
   const userData = await userStateService.getUserData(userId);
   const isEditing = existingReminder !== null;
-  
-  // Сохраняем editingTimeKey для возврата к деталям напоминания
   const editingTimeKey = userData.editingTimeKey || 'time1';
 
   if (capsuleType === 'one') {
     await userStateService.updateUserData(userId, { capsules: 1 });
     
-    // Если редактируем, сохраняем существующие данные и пропускаем выбор часового пояса
     if (isEditing && existingReminder?.timezone) {
       await userStateService.updateUserData(userId, {
         timezone: existingReminder.timezone,
         time1: existingReminder.time1,
-        time2: null, // Для одного раза в день time2 всегда null
-        editingTimeKey: editingTimeKey, // Сохраняем для возврата
+        time2: null,
+        editingTimeKey: editingTimeKey,
       });
       
-      // Пропускаем выбор часового пояса, сразу переходим к выбору времени
       await userStateService.setState(userId, USER_STATES.SELECT_TIME_SINGLE);
-      await ctx.editMessageText(
-        TEXTS.SELECT_TIME_SINGLE,
-        keyboards.timeSelection()
-      );
+      await ctx.editMessageText(TEXTS.SELECT_TIME_SINGLE, keyboards.timeSelection());
       return;
     }
     
     await userStateService.setState(userId, USER_STATES.SELECT_TIMEZONE);
-    
-    await ctx.editMessageText(
-      TEXTS.SELECT_TIMEZONE,
-      keyboard
-    );
+    await ctx.editMessageText(TEXTS.SELECT_TIMEZONE, keyboard);
   } else if (capsuleType === 'two') {
     await userStateService.updateUserData(userId, { capsules: 2 });
     
-    // Если редактируем, сохраняем существующие данные и пропускаем выбор часового пояса
     if (isEditing && existingReminder?.timezone) {
       await userStateService.updateUserData(userId, {
         timezone: existingReminder.timezone,
         time1: existingReminder.time1,
-        time2: existingReminder.time2 || existingReminder.time1, // Если time2 нет, используем time1
-        editingTimeKey: editingTimeKey, // Сохраняем для возврата
+        time2: existingReminder.time2 || existingReminder.time1,
+        editingTimeKey: editingTimeKey,
       });
       
-      // Пропускаем выбор часового пояса, сразу переходим к выбору первого времени
       await userStateService.setState(userId, USER_STATES.SELECT_TIME_FIRST);
-      await ctx.editMessageText(
-        TEXTS.SELECT_TIME_FIRST,
-        keyboards.timeSelection()
-      );
+      await ctx.editMessageText(TEXTS.SELECT_TIME_FIRST, keyboards.timeSelection());
       return;
     }
     
     await userStateService.setState(userId, USER_STATES.SELECT_TIMEZONE);
-    
-    await ctx.editMessageText(
-      TEXTS.SELECT_TIMEZONE,
-      keyboard
-    );
+    await ctx.editMessageText(TEXTS.SELECT_TIMEZONE, keyboard);
   }
 };

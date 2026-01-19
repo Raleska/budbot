@@ -1,13 +1,9 @@
-// Репозиторий для работы с аналитикой пользователей
-
 import { query } from '../connection.js';
 
 export const analyticsRepository = {
-  // Инициализировать аналитику пользователя
   async initUserAnalytics(userId, telegramData) {
     const { username, firstName, lastName } = telegramData;
     
-    // Сначала создаем пользователя
     await query(
       `INSERT INTO users (user_id, username, first_name, last_name)
        VALUES ($1, $2, $3, $4)
@@ -15,7 +11,6 @@ export const analyticsRepository = {
       [userId, username || null, firstName || null, lastName || null]
     );
 
-    // Затем создаем запись аналитики
     const result = await query(
       `INSERT INTO user_analytics (
         user_id, first_interaction, last_interaction, interaction_count,
@@ -30,7 +25,6 @@ export const analyticsRepository = {
     return result.rows[0] || await this.getUserAnalytics(userId);
   },
 
-  // Получить аналитику пользователя
   async getUserAnalytics(userId) {
     const result = await query(
       'SELECT * FROM user_analytics WHERE user_id = $1',
@@ -39,7 +33,6 @@ export const analyticsRepository = {
     return result.rows[0] || null;
   },
 
-  // Обновить последнее взаимодействие
   async updateLastInteraction(userId) {
     await query(
       `UPDATE user_analytics 
@@ -51,7 +44,6 @@ export const analyticsRepository = {
     );
   },
 
-  // Обновить настройки напоминания
   async trackReminderSetup(userId, reminderData) {
     const { capsules, time1, time2, timezone } = reminderData;
     const times = [time1, time2].filter(Boolean);
@@ -68,7 +60,6 @@ export const analyticsRepository = {
     );
   },
 
-  // Отследить изменение напоминания
   async trackReminderChange(userId) {
     await query(
       `UPDATE user_analytics 
@@ -79,7 +70,6 @@ export const analyticsRepository = {
     );
   },
 
-  // Обновить активный день
   async updateActiveDay(userId, date) {
     const dateStr = date || new Date().toISOString().split('T')[0];
     await query(
@@ -96,7 +86,6 @@ export const analyticsRepository = {
     );
   },
 
-  // Отследить выбор часового пояса
   async trackTimezoneSelection(userId, timezone) {
     await query(
       `UPDATE user_analytics 
@@ -107,7 +96,6 @@ export const analyticsRepository = {
     );
   },
 
-  // Получить статистику
   async getStatistics() {
     const totalUsers = await query('SELECT COUNT(*) as count FROM users');
     const activeUsers = await query(
@@ -162,7 +150,6 @@ export const analyticsRepository = {
     };
   },
 
-  // Получить все данные пользователя для экспорта
   async getAllUserData() {
     const result = await query(
       `SELECT 

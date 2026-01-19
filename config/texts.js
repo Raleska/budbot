@@ -1,5 +1,3 @@
-// Загрузка текстов из JSON файла для удобного редактирования
-
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -7,7 +5,6 @@ import { dirname, join } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Загружаем тексты из JSON файла
 let textsData;
 try {
   const textsPath = join(__dirname, 'texts.json');
@@ -20,7 +17,6 @@ try {
   process.exit(1);
 }
 
-// Функция для замены плейсхолдеров в текстах
 function replacePlaceholders(text, params = {}) {
   let result = text;
   for (const [key, value] of Object.entries(params)) {
@@ -29,7 +25,6 @@ function replacePlaceholders(text, params = {}) {
   return result;
 }
 
-// Экспорт текстов с поддержкой функций для текстов с параметрами
 export const TEXTS = {
   WELCOME: textsData.TEXTS.WELCOME,
   SELECT_DOSAGE: textsData.TEXTS.SELECT_DOSAGE,
@@ -39,7 +34,6 @@ export const TEXTS = {
   SELECT_TIME_SECOND: textsData.TEXTS.SELECT_TIME_SECOND,
   ENTER_CUSTOM_TIME: textsData.TEXTS.ENTER_CUSTOM_TIME,
   
-  // Функции для текстов с параметрами
   CONFIRM_TIME_SINGLE: (time) => replacePlaceholders(textsData.TEXTS.CONFIRM_TIME_SINGLE, { time }),
   CONFIRM_TIME_FIRST: (time) => replacePlaceholders(textsData.TEXTS.CONFIRM_TIME_FIRST, { time }),
   CONFIRM_TIME_SECOND: (time) => replacePlaceholders(textsData.TEXTS.CONFIRM_TIME_SECOND, { time }),
@@ -67,8 +61,5 @@ export const TEXTS = {
   INVALID_TIME_RANGE: textsData.TEXTS.INVALID_TIME_RANGE,
 };
 
-// Экспорт кнопок
 export const BUTTONS = textsData.BUTTONS;
-
-// Экспорт часовых поясов
 export const TIMEZONES = textsData.TIMEZONES;

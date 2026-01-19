@@ -1,5 +1,3 @@
-// Состояния пользователя в user flow
-
 export const USER_STATES = {
   START: 'START',
   SELECT_DOSAGE: 'SELECT_DOSAGE',
