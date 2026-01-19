@@ -151,8 +151,10 @@ cd "$APP_DIR"
 if [ -f "scripts/setWebhook.js" ]; then
     # Запускаем скрипт установки вебхука от имени пользователя бота
     if id "botuser" &>/dev/null; then
+        echo -e "${BLUE}   Запуск от имени botuser...${NC}"
         sudo -u botuser node scripts/setWebhook.js
     else
+        echo -e "${BLUE}   Запуск от имени текущего пользователя...${NC}"
         node scripts/setWebhook.js
     fi
 else
