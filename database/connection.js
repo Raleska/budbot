@@ -65,10 +65,14 @@ export async function query(text, params) {
   try {
     const res = await pool.query(text, params);
     const duration = Date.now() - start;
-    console.log('Executed query', { text, duration, rows: res.rowCount });
+    // Логируем только медленные запросы (>100ms) или ошибки
+    if (duration > 100) {
+      console.log(`⚠️  Медленный запрос (${duration}ms):`, text.substring(0, 100) + '...');
+    }
     return res;
   } catch (error) {
-    console.error('Database query error:', error);
+    console.error('❌ Database query error:', error.message);
+    console.error('   Query:', text.substring(0, 200));
     throw error;
   }
 }
@@ -81,11 +85,11 @@ export async function getClient() {
 // Функция для проверки подключения
 export async function testConnection() {
   try {
-    const result = await query('SELECT NOW()');
-    console.log('Database connection successful:', result.rows[0]);
+    const result = await pool.query('SELECT NOW()');
+    console.log('✅ Подключение к базе данных успешно');
     return true;
   } catch (error) {
-    console.error('Database connection failed:', error);
+    console.error('❌ Ошибка подключения к базе данных:', error.message);
     return false;
   }
 }
