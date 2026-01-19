@@ -64,14 +64,19 @@ END;
 $$ language 'plpgsql';
 
 -- Триггеры для автоматического обновления updated_at
+-- Используем DROP IF EXISTS для безопасного пересоздания
+DROP TRIGGER IF EXISTS update_users_updated_at ON users;
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_user_states_updated_at ON user_states;
 CREATE TRIGGER update_user_states_updated_at BEFORE UPDATE ON user_states
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_reminders_updated_at ON reminders;
 CREATE TRIGGER update_reminders_updated_at BEFORE UPDATE ON reminders
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_user_analytics_updated_at ON user_analytics;
 CREATE TRIGGER update_user_analytics_updated_at BEFORE UPDATE ON user_analytics
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
