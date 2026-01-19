@@ -80,6 +80,12 @@ function getSslConfig() {
     if (process.env.DB_SSL_CA) {
       console.warn(`⚠️  SSL сертификат не найден по пути: ${certPath}`);
     }
+    // Для облачных БД без сертификата отключаем проверку
+    const dbHost = process.env.DB_HOST || 'localhost';
+    if (dbHost !== 'localhost' && !dbHost.startsWith('127.0.0.1')) {
+      console.warn('   Отключаем проверку сертификата для облачной БД');
+      sslConfig.rejectUnauthorized = false;
+    }
   }
 
   return sslConfig;

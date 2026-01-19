@@ -28,13 +28,26 @@ function getSslConfig() {
   try {
     const cert = readFileSync(certPath, 'utf-8');
     sslConfig.ca = cert;
+    console.log(`✅ SSL сертификат загружен: ${certPath}`);
   } catch (error) {
     if (process.env.DB_SSL_CA) {
       // Если путь указан явно, но файл не найден - предупреждаем
       console.warn(`⚠️  SSL сертификат не найден по пути: ${certPath}`);
       console.warn('   Продолжаем без SSL сертификата');
+      // Для облачных БД без сертификата отключаем проверку
+      if (process.env.DB_HOST && process.env.DB_HOST !== 'localhost' && !process.env.DB_HOST.startsWith('127.0.0.1')) {
+        console.warn('   ⚠️  Для облачной БД рекомендуется указать правильный путь к сертификату');
+        console.warn('   💡 Или установите DB_SSL_REJECT_UNAUTHORIZED=false (менее безопасно)');
+        sslConfig.rejectUnauthorized = false;
+      }
+    } else {
+      // Если путь не указан явно, для облачных БД отключаем проверку
+      if (process.env.DB_HOST && process.env.DB_HOST !== 'localhost' && !process.env.DB_HOST.startsWith('127.0.0.1')) {
+        console.warn('⚠️  SSL сертификат не указан для облачной БД');
+        console.warn('   Отключаем проверку сертификата (DB_SSL_REJECT_UNAUTHORIZED=false)');
+        sslConfig.rejectUnauthorized = false;
+      }
     }
-    // Если путь не указан явно, просто используем SSL без сертификата
   }
 
   return sslConfig;
