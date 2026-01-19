@@ -21,6 +21,8 @@ export const reminderDetailHandler = async (ctx, timeKey) => {
   
   const rawTime = timeKey === 'time1' ? reminder.time1 : reminder.time2;
   const time = normalizeTime(rawTime);
+  const time1 = normalizeTime(reminder.time1);
+  const time2 = reminder.time2 ? normalizeTime(reminder.time2) : null;
   
   const hasTwoTimes = reminder.time2 !== null && reminder.time2 !== undefined && reminder.time2 !== '';
   const capsules = hasTwoTimes ? 2 : 1;
@@ -30,7 +32,7 @@ export const reminderDetailHandler = async (ctx, timeKey) => {
     editingTime: time,
   });
   
-  const message = TEXTS.REMINDER_DETAILS(capsules, time);
+  const message = TEXTS.REMINDER_DETAILS(capsules, time1, time2);
   
   const keyboard = Markup.inlineKeyboard([
     [Markup.button.callback(BUTTONS.EDIT_CAPSULES, 'action:edit_capsules')],

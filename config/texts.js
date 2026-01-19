@@ -48,11 +48,12 @@ export const TEXTS = {
   
   ACTIVE_REMINDERS_LIST: textsData.TEXTS.ACTIVE_REMINDERS_LIST,
   
-  REMINDER_DETAILS: (capsules, time) => {
-    const template = capsules === 1 
-      ? textsData.TEXTS.REMINDER_DETAILS_ONE 
-      : textsData.TEXTS.REMINDER_DETAILS_TWO;
-    return replacePlaceholders(template, { time });
+  REMINDER_DETAILS: (capsules, time, time2 = null) => {
+    if (capsules === 1) {
+      return replacePlaceholders(textsData.TEXTS.REMINDER_DETAILS_ONE, { time });
+    } else {
+      return replacePlaceholders(textsData.TEXTS.REMINDER_DETAILS_TWO, { time1: time, time2: time2 || time });
+    }
   },
   
   NO_ACTIVE_REMINDERS: textsData.TEXTS.NO_ACTIVE_REMINDERS,
