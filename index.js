@@ -24,13 +24,25 @@ if (!BOT_TOKEN) {
   process.exit(1);
 }
 
-const bot = new Telegraf(BOT_TOKEN, {
-  // Включаем поддержку Markdown форматирования для всех сообщений
-  telegram: {
-    options: {
-      parse_mode: 'Markdown'
-    }
-  }
+const bot = new Telegraf(BOT_TOKEN);
+
+// Middleware для автоматического добавления Markdown форматирования ко всем сообщениям
+bot.use(async (ctx, next) => {
+  // Сохраняем оригинальные методы
+  const originalReply = ctx.reply.bind(ctx);
+  const originalEditMessageText = ctx.editMessageText.bind(ctx);
+  
+  // Переопределяем ctx.reply для добавления parse_mode
+  ctx.reply = async function(text, extra = {}) {
+    return originalReply(text, { ...extra, parse_mode: 'Markdown' });
+  };
+  
+  // Переопределяем ctx.editMessageText для добавления parse_mode
+  ctx.editMessageText = async function(text, extra = {}) {
+    return originalEditMessageText(text, { ...extra, parse_mode: 'Markdown' });
+  };
+  
+  return next();
 });
 
 // Определение режима работы с БД
