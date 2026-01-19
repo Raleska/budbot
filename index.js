@@ -34,20 +34,24 @@ bot.use(async (ctx, next) => {
   
   // Переопределяем ctx.reply для добавления parse_mode
   ctx.reply = async function(text, extra = {}) {
-    // Всегда добавляем parse_mode, независимо от типа extra
-    const options = extra && typeof extra === 'object' 
-      ? { ...extra, parse_mode: 'Markdown' }
-      : { reply_markup: extra, parse_mode: 'Markdown' };
-    return originalReply(text, options);
+    // Если extra - это объект Markup (имеет reply_markup), добавляем parse_mode
+    // Если extra - это обычный объект опций, также добавляем parse_mode
+    if (extra && typeof extra === 'object') {
+      return originalReply(text, { ...extra, parse_mode: 'Markdown' });
+    }
+    // Если extra не передан или не объект, создаем объект опций
+    return originalReply(text, { parse_mode: 'Markdown' });
   };
   
   // Переопределяем ctx.editMessageText для добавления parse_mode
   ctx.editMessageText = async function(text, extra = {}) {
-    // Всегда добавляем parse_mode, независимо от типа extra
-    const options = extra && typeof extra === 'object' 
-      ? { ...extra, parse_mode: 'Markdown' }
-      : { reply_markup: extra, parse_mode: 'Markdown' };
-    return originalEditMessageText(text, options);
+    // Если extra - это объект Markup (имеет reply_markup), добавляем parse_mode
+    // Если extra - это обычный объект опций, также добавляем parse_mode
+    if (extra && typeof extra === 'object') {
+      return originalEditMessageText(text, { ...extra, parse_mode: 'Markdown' });
+    }
+    // Если extra не передан или не объект, создаем объект опций
+    return originalEditMessageText(text, { parse_mode: 'Markdown' });
   };
   
   return next();
