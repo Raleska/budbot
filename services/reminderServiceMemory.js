@@ -69,7 +69,8 @@ function createCronExpression(time) {
 async function sendReminder(bot, userId, reminder) {
   try {
     const message = TEXTS.REMINDER_MESSAGE(reminder.capsules);
-    await bot.telegram.sendMessage(userId, message, { parse_mode: 'HTML' });
+    const telegram = bot.telegram || bot;
+    await telegram.sendMessage(userId, message, { parse_mode: 'HTML' });
     console.log(`📨 Напоминание отправлено пользователю ${userId} в ${new Date().toISOString()}`);
   } catch (error) {
     console.error(`❌ Ошибка при отправке напоминания пользователю ${userId}:`, error);
