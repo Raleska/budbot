@@ -45,15 +45,17 @@ async function initializeBot() {
       // Режим с БД
       console.log('🔌 Подключение к базе данных...');
       const { testConnection } = await import('./database/connection.js');
-      const { initDatabase } = await import('./database/init.js');
+      const { ensureDatabaseInitialized } = await import('./database/init.js');
       
       try {
         const connected = await testConnection();
         
         if (!connected) {
-          console.log('📦 Инициализация схемы базы данных...');
-          await initDatabase();
+          throw new Error('Не удалось подключиться к базе данных');
         }
+        
+        // Проверяем и инициализируем БД при необходимости
+        await ensureDatabaseInitialized();
         
         console.log('📋 Загрузка активных напоминаний из БД...');
         await loadAllReminders(bot.telegram);
@@ -65,7 +67,8 @@ async function initializeBot() {
         console.error('💡 Решения:');
         console.error('   1. Запустите PostgreSQL и убедитесь, что он работает');
         console.error('   2. Проверьте настройки в .env (DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD)');
-        console.error('   3. Или запустите бота в режиме без БД: npm run start:memory');
+        console.error('   3. Убедитесь, что база данных создана: CREATE DATABASE bot_remind;');
+        console.error('   4. Или запустите бота в режиме без БД: npm run start:memory');
         console.error('');
         console.error('   Для запуска без БД используйте:');
         console.error('     npm run start:memory');
