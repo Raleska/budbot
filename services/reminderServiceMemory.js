@@ -3,6 +3,11 @@ import { TEXTS } from '../config/texts.js';
 
 const reminders = new Map();
 const cronJobs = new Map();
+let botInstance = null;
+
+export function setBotInstance(bot) {
+  botInstance = bot;
+}
 
 function getTimezoneOffset(timezone) {
   if (!timezone) return 0;
@@ -66,11 +71,15 @@ function createCronExpression(time) {
   return `${minutes} ${hours} * * *`;
 }
 
-async function sendReminder(bot, userId, reminder) {
+async function sendReminder(userId, reminder) {
+  if (!botInstance) {
+    console.error(`❌ Bot instance не установлен, невозможно отправить напоминание пользователю ${userId}`);
+    return;
+  }
+  
   try {
     const message = TEXTS.REMINDER_MESSAGE(reminder.capsules);
-    const telegram = bot.telegram || bot;
-    await telegram.sendMessage(userId, message, { parse_mode: 'HTML' });
+    await botInstance.telegram.sendMessage(userId, message, { parse_mode: 'HTML' });
     console.log(`📨 Напоминание отправлено пользователю ${userId} в ${new Date().toISOString()}`);
   } catch (error) {
     console.error(`❌ Ошибка при отправке напоминания пользователю ${userId}:`, error);
@@ -81,7 +90,13 @@ async function sendReminder(bot, userId, reminder) {
   }
 }
 
-export async function addReminder(bot, userId, reminderData) {
+export async function addReminder(botOrTelegram, userId, reminderData) {
+  if (botOrTelegram && botOrTelegram.telegram) {
+    setBotInstance(botOrTelegram);
+  } else if (botOrTelegram) {
+    setBotInstance({ telegram: botOrTelegram });
+  }
+  
   const existingJobs = cronJobs.get(userId);
   if (existingJobs) {
     existingJobs.forEach(job => job.stop());
@@ -99,7 +114,7 @@ export async function addReminder(bot, userId, reminderData) {
     console.log(`⏰ Cron job сработал для пользователя ${userId} в ${now.toISOString()} (UTC)`);
     const reminder = reminders.get(userId);
     if (reminder) {
-      await sendReminder(bot, userId, reminder);
+      await sendReminder(userId, reminder);
     } else {
       console.log(`⚠️ Напоминание для пользователя ${userId} не найдено`);
     }
@@ -120,7 +135,7 @@ export async function addReminder(bot, userId, reminderData) {
       console.log(`⏰ Cron job сработал для пользователя ${userId} (time2) в ${now.toISOString()} (UTC)`);
       const reminder = reminders.get(userId);
       if (reminder) {
-        await sendReminder(bot, userId, reminder);
+        await sendReminder(userId, reminder);
       } else {
         console.log(`⚠️ Напоминание для пользователя ${userId} не найдено`);
       }
@@ -169,5 +184,6 @@ export async function getAllReminders() {
 }
 
 export async function loadAllReminders(bot) {
+  setBotInstance(bot);
   console.log('ℹ️ Режим без БД: напоминания хранятся только в памяти');
 }

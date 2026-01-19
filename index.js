@@ -65,7 +65,7 @@ async function initializeBot() {
       try {
         await ensureDatabaseInitialized();
         console.log('📋 Загрузка активных напоминаний из БД...');
-        await loadAllReminders(bot.telegram);
+        await loadAllReminders(bot);
         console.log('✅ Инициализация с БД завершена');
       } catch (dbError) {
         console.error('❌ Ошибка подключения к базе данных:', dbError.message);
@@ -85,7 +85,7 @@ async function initializeBot() {
     } else {
       console.log('💾 Режим работы: in-memory (без базы данных)');
       console.log('⚠️  Данные будут храниться только в памяти и потеряются при перезапуске');
-      await loadAllReminders(bot.telegram);
+      await loadAllReminders(bot);
       console.log('✅ Инициализация без БД завершена');
     }
   } catch (error) {
