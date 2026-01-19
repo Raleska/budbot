@@ -108,9 +108,13 @@ export async function addReminder(bot, userId, reminderData) {
   const cronExpr1 = createCronExpression(utcTime1);
   
   const job1 = cron.schedule(cronExpr1, async () => {
+    const now = new Date();
+    console.log(`⏰ Cron job сработал для пользователя ${userId} в ${now.toISOString()} (UTC)`);
     const reminder = await reminderRepository.getReminderByUserId(userId);
     if (reminder && reminder.enabled) {
       await sendReminder(bot, userId, reminder);
+    } else {
+      console.log(`⚠️ Напоминание для пользователя ${userId} не найдено или отключено`);
     }
   }, {
     scheduled: true,
@@ -124,9 +128,13 @@ export async function addReminder(bot, userId, reminderData) {
     const cronExpr2 = createCronExpression(utcTime2);
     
     const job2 = cron.schedule(cronExpr2, async () => {
+      const now = new Date();
+      console.log(`⏰ Cron job сработал для пользователя ${userId} (time2) в ${now.toISOString()} (UTC)`);
       const reminder = await reminderRepository.getReminderByUserId(userId);
       if (reminder && reminder.enabled) {
         await sendReminder(bot, userId, reminder);
+      } else {
+        console.log(`⚠️ Напоминание для пользователя ${userId} не найдено или отключено`);
       }
     }, {
       scheduled: true,
