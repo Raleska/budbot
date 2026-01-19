@@ -123,9 +123,10 @@ export async function addReminder(bot, userId, reminderData) {
   
   jobs.push(job1);
   
+  let cronExpr2 = null;
   if (reminderData.time2) {
     const utcTime2 = convertToUTC(reminderData.time2, reminderData.timezone);
-    const cronExpr2 = createCronExpression(utcTime2);
+    cronExpr2 = createCronExpression(utcTime2);
     
     const job2 = cron.schedule(cronExpr2, async () => {
       const now = new Date();
@@ -152,7 +153,7 @@ export async function addReminder(bot, userId, reminderData) {
   console.log(`   Локальное время: ${reminderData.time1}${reminderData.time2 ? ` / ${reminderData.time2}` : ''}`);
   console.log(`   Часовой пояс: ${reminderData.timezone}`);
   console.log(`   UTC время: ${utcTime1}${utcTime2 ? ` / ${utcTime2}` : ''}`);
-  console.log(`   Cron выражения: ${cronExpr1}${reminderData.time2 ? ` и ${cronExpr2}` : ''}`);
+  console.log(`   Cron выражения: ${cronExpr1}${cronExpr2 ? ` и ${cronExpr2}` : ''}`);
 }
 
 export async function removeReminder(userId) {
@@ -179,14 +180,27 @@ export async function getAllReminders() {
 
 export async function loadAllReminders(bot) {
   const reminders = await reminderRepository.getAllActiveReminders();
+  let loadedCount = 0;
+  let errorCount = 0;
+  
   for (const reminder of reminders) {
-    const reminderData = {
-      capsules: reminder.capsules,
-      time1: reminder.time1,
-      time2: reminder.time2,
-      timezone: reminder.timezone,
-    };
-    await addReminder(bot, reminder.user_id, reminderData);
+    try {
+      const reminderData = {
+        capsules: reminder.capsules,
+        time1: reminder.time1,
+        time2: reminder.time2 || null,
+        timezone: reminder.timezone,
+      };
+      await addReminder(bot, reminder.user_id, reminderData);
+      loadedCount++;
+    } catch (error) {
+      errorCount++;
+      console.error(`❌ Ошибка при загрузке напоминания для пользователя ${reminder.user_id}:`, error.message);
+    }
   }
-  console.log(`📋 Загружено ${reminders.length} активных напоминаний из БД`);
+  
+  console.log(`📋 Загружено ${loadedCount} из ${reminders.length} активных напоминаний из БД`);
+  if (errorCount > 0) {
+    console.error(`⚠️  Не удалось загрузить ${errorCount} напоминаний`);
+  }
 }
