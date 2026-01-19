@@ -83,9 +83,11 @@ async function sendReminder(bot, userId, reminder) {
   try {
     const message = TEXTS.REMINDER_MESSAGE(reminder.capsules);
     await bot.telegram.sendMessage(userId, message, { parse_mode: 'HTML' });
+    console.log(`📨 Напоминание отправлено пользователю ${userId} в ${new Date().toISOString()}`);
   } catch (error) {
-    console.error(`Ошибка при отправке напоминания пользователю ${userId}:`, error);
+    console.error(`❌ Ошибка при отправке напоминания пользователю ${userId}:`, error);
     if (error.response?.error_code === 403) {
+      console.log(`   Пользователь ${userId} заблокировал бота, удаляем напоминание`);
       await removeReminder(userId);
     }
   }
@@ -136,13 +138,13 @@ export async function addReminder(bot, userId, reminderData) {
   
   cronJobs.set(userId, jobs);
   
-  console.log(`✅ Напоминание добавлено для пользователя ${userId}:`, {
-    time1: reminderData.time1,
-    time2: reminderData.time2,
-    timezone: reminderData.timezone,
-    utcTime1,
-    utcTime2: reminderData.time2 ? convertToUTC(reminderData.time2, reminderData.timezone) : null,
-  });
+  const utcTime2 = reminderData.time2 ? convertToUTC(reminderData.time2, reminderData.timezone) : null;
+  
+  console.log(`✅ Напоминание добавлено для пользователя ${userId}:`);
+  console.log(`   Локальное время: ${reminderData.time1}${reminderData.time2 ? ` / ${reminderData.time2}` : ''}`);
+  console.log(`   Часовой пояс: ${reminderData.timezone}`);
+  console.log(`   UTC время: ${utcTime1}${utcTime2 ? ` / ${utcTime2}` : ''}`);
+  console.log(`   Cron выражения: ${cronExpr1}${reminderData.time2 ? ` и ${cronExpr2}` : ''}`);
 }
 
 export async function removeReminder(userId) {
