@@ -58,6 +58,35 @@ export async function checkFunctionExists() {
   }
 }
 
+// Получение SSL конфигурации для подключения
+async function getSslConfigForPool() {
+  const sslMode = process.env.DB_SSLMODE || 'prefer';
+  
+  if (sslMode === 'disable') {
+    return false;
+  }
+  
+  if (process.env.DB_SSLROOTCERT) {
+    try {
+      return {
+        rejectUnauthorized: sslMode === 'verify-full' || sslMode === 'verify-ca',
+        ca: readFileSync(process.env.DB_SSLROOTCERT).toString(),
+      };
+    } catch (error) {
+      console.error('Ошибка при чтении SSL сертификата:', error.message);
+      return { rejectUnauthorized: false };
+    }
+  }
+  
+  if (sslMode === 'require' || sslMode === 'verify-full' || sslMode === 'verify-ca') {
+    return {
+      rejectUnauthorized: sslMode === 'verify-full' || sslMode === 'verify-ca',
+    };
+  }
+  
+  return false;
+}
+
 // Проверка существования базы данных
 export async function checkDatabaseExists() {
   const dbName = process.env.DB_NAME || 'bot_remind';
@@ -67,15 +96,23 @@ export async function checkDatabaseExists() {
   const dbPassword = process.env.DB_PASSWORD || '';
 
   try {
+    const sslConfig = await getSslConfigForPool();
+    
     // Подключаемся к системной базе данных postgres для проверки
-    const adminPool = new Pool({
+    const adminPoolConfig = {
       host: dbHost,
       port: dbPort,
       database: 'postgres', // Подключаемся к системной БД
       user: dbUser,
       password: dbPassword,
       connectionTimeoutMillis: 2000,
-    });
+    };
+    
+    if (sslConfig !== false) {
+      adminPoolConfig.ssl = sslConfig;
+    }
+    
+    const adminPool = new Pool(adminPoolConfig);
 
     const result = await adminPool.query(`
       SELECT 1 FROM pg_database WHERE datname = $1
@@ -84,17 +121,24 @@ export async function checkDatabaseExists() {
     await adminPool.end();
     
     return result.rows.length > 0;
-  } catch (error) {
+    } catch (error) {
     // Если не удалось подключиться к postgres, пробуем подключиться напрямую к нужной БД
     try {
-      const testPool = new Pool({
+      const sslConfig = await getSslConfigForPool();
+      const testPoolConfig = {
         host: dbHost,
         port: dbPort,
         database: dbName,
         user: dbUser,
         password: dbPassword,
         connectionTimeoutMillis: 2000,
-      });
+      };
+      
+      if (sslConfig !== false) {
+        testPoolConfig.ssl = sslConfig;
+      }
+      
+      const testPool = new Pool(testPoolConfig);
       
       await testPool.query('SELECT 1');
       await testPool.end();
@@ -116,15 +160,23 @@ export async function createDatabase() {
   try {
     console.log(`📦 Создание базы данных "${dbName}"...`);
     
+    const sslConfig = await getSslConfigForPool();
+    
     // Подключаемся к системной базе данных postgres
-    const adminPool = new Pool({
+    const adminPoolConfig = {
       host: dbHost,
       port: dbPort,
       database: 'postgres',
       user: dbUser,
       password: dbPassword,
       connectionTimeoutMillis: 5000,
-    });
+    };
+    
+    if (sslConfig !== false) {
+      adminPoolConfig.ssl = sslConfig;
+    }
+    
+    const adminPool = new Pool(adminPoolConfig);
 
     // Проверяем, существует ли база данных
     const checkResult = await adminPool.query(`
