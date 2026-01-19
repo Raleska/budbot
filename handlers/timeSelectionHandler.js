@@ -43,13 +43,17 @@ export const timeSelectionHandler = async (ctx, time) => {
     await userStateService.setState(userId, USER_STATES.CONFIRM_TIME_FIRST);
     await ctx.editMessageText(TEXTS.CONFIRM_TIME_FIRST(normalizedTime), keyboard);
   } else if (state === USER_STATES.SELECT_TIME_SECOND) {
-    await userStateService.updateUserData(userId, { time2: normalizedTime });
+    const currentUserData = await userStateService.getUserData(userId);
+    await userStateService.updateUserData(userId, { 
+      time2: normalizedTime,
+      time1: currentUserData.time1 || (existingReminder?.time1 || '12:00'),
+    });
     
     if (isEditing && existingReminder) {
       await userStateService.updateUserData(userId, {
         capsules: existingReminder.capsules,
         timezone: existingReminder.timezone,
-        time1: existingReminder.time1,
+        time1: currentUserData.time1 || existingReminder.time1,
         editingTimeKey: userData.editingTimeKey || 'time2',
       });
     }

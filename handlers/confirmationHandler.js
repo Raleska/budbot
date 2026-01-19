@@ -73,9 +73,16 @@ export const confirmationHandler = async (ctx) => {
     }
     
     const existingReminder = await getReminder(userId);
+    
+    if (!userData.time1 || !userData.time2) {
+      console.error('Ошибка: отсутствуют оба времени для напоминания', userData);
+      await ctx.editMessageText('Произошла ошибка. Пожалуйста, начните заново с /start');
+      return;
+    }
+    
     const reminderData = {
       capsules: 2,
-      time1: normalizeTime(userData.time1 || (existingReminder?.time1 || '12:00')),
+      time1: normalizeTime(userData.time1),
       time2: normalizeTime(userData.time2),
       timezone: userData.timezone || (existingReminder?.timezone || 'UTC+3'),
     };
