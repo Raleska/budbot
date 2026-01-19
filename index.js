@@ -44,17 +44,10 @@ async function initializeBot() {
     if (USE_DATABASE) {
       // Режим с БД
       console.log('🔌 Подключение к базе данных...');
-      const { testConnection } = await import('./database/connection.js');
       const { ensureDatabaseInitialized } = await import('./database/init.js');
       
       try {
-        const connected = await testConnection();
-        
-        if (!connected) {
-          throw new Error('Не удалось подключиться к базе данных');
-        }
-        
-        // Проверяем и инициализируем БД при необходимости
+        // ensureDatabaseInitialized сама проверит подключение и создаст БД/таблицы при необходимости
         await ensureDatabaseInitialized();
         
         console.log('📋 Загрузка активных напоминаний из БД...');
@@ -65,10 +58,11 @@ async function initializeBot() {
         console.error('❌ Ошибка подключения к базе данных:', dbError.message);
         console.error('');
         console.error('💡 Решения:');
-        console.error('   1. Запустите PostgreSQL и убедитесь, что он работает');
-        console.error('   2. Проверьте настройки в .env (DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD)');
-        console.error('   3. Убедитесь, что база данных создана: CREATE DATABASE bot_remind;');
-        console.error('   4. Или запустите бота в режиме без БД: npm run start:memory');
+        console.error('   1. Проверьте настройки в .env (DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD)');
+        console.error('   2. Для облачных БД: убедитесь, что база данных создана в панели управления провайдера');
+        console.error('   3. Для локальных БД: убедитесь, что PostgreSQL запущен и база данных создана');
+        console.error('   4. Проверьте SSL настройки (DB_SSL, DB_SSL_CA) если используете облачную БД');
+        console.error('   5. Или запустите бота в режиме без БД: npm run start:memory');
         console.error('');
         console.error('   Для запуска без БД используйте:');
         console.error('     npm run start:memory');
