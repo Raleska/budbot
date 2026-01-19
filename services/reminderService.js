@@ -97,7 +97,7 @@ function createCronExpression(time) {
 async function sendReminder(bot, userId, reminder) {
   try {
     const message = TEXTS.REMINDER_MESSAGE(reminder.capsules);
-    await bot.sendMessage(userId, message);
+    await bot.telegram.sendMessage(userId, message, { parse_mode: 'Markdown' });
   } catch (error) {
     console.error(`Ошибка при отправке напоминания пользователю ${userId}:`, error);
     // Если пользователь заблокировал бота, удаляем напоминание

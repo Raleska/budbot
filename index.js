@@ -24,7 +24,14 @@ if (!BOT_TOKEN) {
   process.exit(1);
 }
 
-const bot = new Telegraf(BOT_TOKEN);
+const bot = new Telegraf(BOT_TOKEN, {
+  // Включаем поддержку Markdown форматирования для всех сообщений
+  telegram: {
+    options: {
+      parse_mode: 'Markdown'
+    }
+  }
+});
 
 // Определение режима работы с БД
 const USE_DATABASE = process.env.USE_DATABASE !== 'false'; // По умолчанию true, если не указано false
