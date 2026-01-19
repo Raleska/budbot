@@ -104,9 +104,26 @@ if [ -f "package.json" ]; then
     echo -e "${GREEN}✅ Зависимости обновлены${NC}"
 fi
 
+# Определение команды запуска на основе .env
+USE_DATABASE=$(sudo -u $BOT_USER grep -E "^USE_DATABASE=" $APP_DIR/.env 2>/dev/null | cut -d '=' -f2 || echo "true")
+USE_WEBHOOK=$(sudo -u $BOT_USER grep -E "^USE_WEBHOOK=" $APP_DIR/.env 2>/dev/null | cut -d '=' -f2 || echo "false")
+
+if [ "$USE_DATABASE" = "false" ]; then
+    START_CMD="start:memory"
+else
+    if [ "$USE_WEBHOOK" = "true" ]; then
+        START_CMD="start:webhook"
+    else
+        START_CMD="start"
+    fi
+fi
+
 # Запуск бота
-echo -e "${YELLOW}🚀 Запуск бота...${NC}"
-sudo -u $BOT_USER pm2 restart telegram-bot || sudo -u $BOT_USER pm2 start index.js --name telegram-bot
+echo -e "${YELLOW}🚀 Запуск бота (команда: $START_CMD)...${NC}"
+if sudo -u $BOT_USER pm2 list | grep -q "telegram-bot"; then
+    sudo -u $BOT_USER pm2 delete telegram-bot 2>/dev/null || true
+fi
+sudo -u $BOT_USER pm2 start npm --name telegram-bot -- run $START_CMD
 sudo -u $BOT_USER pm2 save
 
 # Проверка статуса
