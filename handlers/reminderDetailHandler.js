@@ -22,12 +22,15 @@ export const reminderDetailHandler = async (ctx, timeKey) => {
   const rawTime = timeKey === 'time1' ? reminder.time1 : reminder.time2;
   const time = normalizeTime(rawTime);
   
+  const hasTwoTimes = reminder.time2 !== null && reminder.time2 !== undefined && reminder.time2 !== '';
+  const capsules = hasTwoTimes ? 2 : 1;
+  
   await userStateService.updateUserData(userId, { 
     editingTimeKey: timeKey,
     editingTime: time,
   });
   
-  const message = TEXTS.REMINDER_DETAILS(reminder.capsules, time);
+  const message = TEXTS.REMINDER_DETAILS(capsules, time);
   
   const keyboard = Markup.inlineKeyboard([
     [Markup.button.callback(BUTTONS.EDIT_CAPSULES, 'action:edit_capsules')],

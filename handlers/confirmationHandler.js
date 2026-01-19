@@ -23,7 +23,7 @@ export const confirmationHandler = async (ctx) => {
     
     const existingReminder = await getReminder(userId);
     const reminderData = {
-      capsules: userData.capsules || (existingReminder?.capsules || 1),
+      capsules: 1,
       time1: normalizeTime(userData.time1),
       time2: null,
       timezone: userData.timezone || (existingReminder?.timezone || 'UTC+3'),
@@ -74,7 +74,7 @@ export const confirmationHandler = async (ctx) => {
     
     const existingReminder = await getReminder(userId);
     const reminderData = {
-      capsules: userData.capsules || (existingReminder?.capsules || 2),
+      capsules: 2,
       time1: normalizeTime(userData.time1 || (existingReminder?.time1 || '12:00')),
       time2: normalizeTime(userData.time2),
       timezone: userData.timezone || (existingReminder?.timezone || 'UTC+3'),
