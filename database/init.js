@@ -95,7 +95,7 @@ export async function checkDatabaseExists() {
 
   try {
     // Подключаемся к системной базе данных postgres для проверки
-    const sslConfig = await getSslConfig();
+    const sslConfig = getSslConfig();
     const adminPool = new Pool({
       host: dbHost,
       port: dbPort,
@@ -148,12 +148,14 @@ export async function createDatabase() {
     console.log(`📦 Создание базы данных "${dbName}"...`);
     
     // Подключаемся к системной базе данных postgres
+    const sslConfig = getSslConfig();
     const adminPool = new Pool({
       host: dbHost,
       port: dbPort,
       database: 'postgres',
       user: dbUser,
       password: dbPassword,
+      ssl: sslConfig,
       connectionTimeoutMillis: 5000,
     });
 
