@@ -4,61 +4,54 @@ import pkg from 'pg';
 const { Pool } = pkg;
 import dotenv from 'dotenv';
 import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+import { homedir } from 'os';
 
 dotenv.config();
 
-// Настройка SSL для подключения
-const getSslConfig = () => {
-  const sslMode = process.env.DB_SSLMODE || 'prefer';
+// Функция для настройки SSL
+function getSslConfig() {
+  const useSsl = process.env.DB_SSL === 'true' || process.env.DB_SSL === '1';
   
-  // Если SSL отключен явно
-  if (sslMode === 'disable') {
+  if (!useSsl) {
     return false;
   }
+
+  const sslConfig = {
+    rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false',
+  };
+
+  // Путь к SSL сертификату
+  const certPath = process.env.DB_SSL_CA || join(homedir(), '.cloud-certs', 'root.crt');
   
-  // Если указан путь к сертификату
-  if (process.env.DB_SSLROOTCERT) {
-    try {
-      return {
-        rejectUnauthorized: sslMode === 'verify-full' || sslMode === 'verify-ca',
-        ca: readFileSync(process.env.DB_SSLROOTCERT).toString(),
-      };
-    } catch (error) {
-      console.error('Ошибка при чтении SSL сертификата:', error.message);
-      return { rejectUnauthorized: false };
+  try {
+    const cert = readFileSync(certPath, 'utf-8');
+    sslConfig.ca = cert;
+  } catch (error) {
+    if (process.env.DB_SSL_CA) {
+      // Если путь указан явно, но файл не найден - предупреждаем
+      console.warn(`⚠️  SSL сертификат не найден по пути: ${certPath}`);
+      console.warn('   Продолжаем без SSL сертификата');
     }
+    // Если путь не указан явно, просто используем SSL без сертификата
   }
-  
-  // Если используется connection string с SSL параметрами
-  if (sslMode === 'require' || sslMode === 'verify-full' || sslMode === 'verify-ca') {
-    return {
-      rejectUnauthorized: sslMode === 'verify-full' || sslMode === 'verify-ca',
-    };
-  }
-  
-  // По умолчанию для локальных подключений SSL не требуется
-  return false;
-};
+
+  return sslConfig;
+}
 
 // Создание пула подключений
-const poolConfig = {
+const pool = new Pool({
   host: process.env.DB_HOST || 'localhost',
   port: parseInt(process.env.DB_PORT || '5432'),
   database: process.env.DB_NAME || 'bot_remind',
   user: process.env.DB_USER || 'postgres',
   password: process.env.DB_PASSWORD || '',
+  ssl: getSslConfig(),
   max: 20, // Максимальное количество клиентов в пуле
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 2000,
-};
-
-// Добавляем SSL конфигурацию, если нужно
-const sslConfig = getSslConfig();
-if (sslConfig !== false) {
-  poolConfig.ssl = sslConfig;
-}
-
-const pool = new Pool(poolConfig);
+});
 
 // Обработка ошибок подключения
 pool.on('error', (err) => {
