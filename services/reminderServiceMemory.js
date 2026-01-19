@@ -109,9 +109,10 @@ export async function addReminder(bot, userId, reminderData) {
   
   jobs.push(job1);
   
+  let cronExpr2 = null;
   if (reminderData.time2) {
     const utcTime2 = convertToUTC(reminderData.time2, reminderData.timezone);
-    const cronExpr2 = createCronExpression(utcTime2);
+    cronExpr2 = createCronExpression(utcTime2);
     
     const job2 = cron.schedule(cronExpr2, async () => {
       const now = new Date();
@@ -138,7 +139,7 @@ export async function addReminder(bot, userId, reminderData) {
   console.log(`   Локальное время: ${reminderData.time1}${reminderData.time2 ? ` / ${reminderData.time2}` : ''}`);
   console.log(`   Часовой пояс: ${reminderData.timezone}`);
   console.log(`   UTC время: ${utcTime1}${utcTime2 ? ` / ${utcTime2}` : ''}`);
-  console.log(`   Cron выражения: ${cronExpr1}${reminderData.time2 ? ` и ${cronExpr2}` : ''}`);
+  console.log(`   Cron выражения: ${cronExpr1}${cronExpr2 ? ` и ${cronExpr2}` : ''}`);
 }
 
 export async function removeReminder(userId) {
