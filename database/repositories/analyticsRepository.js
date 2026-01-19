@@ -88,7 +88,7 @@ export const analyticsRepository = {
          COALESCE(active_days, ARRAY[]::TEXT[]), 
          $2
        ),
-       last_active_date = $2,
+       last_active_date = $2::DATE,
        updated_at = CURRENT_TIMESTAMP
        WHERE user_id = $1 
        AND NOT ($2 = ANY(COALESCE(active_days, ARRAY[]::TEXT[])))`,
