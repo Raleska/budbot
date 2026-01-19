@@ -34,12 +34,20 @@ bot.use(async (ctx, next) => {
   
   // Переопределяем ctx.reply для добавления parse_mode
   ctx.reply = async function(text, extra = {}) {
-    return originalReply(text, { ...extra, parse_mode: 'Markdown' });
+    // Всегда добавляем parse_mode, независимо от типа extra
+    const options = extra && typeof extra === 'object' 
+      ? { ...extra, parse_mode: 'Markdown' }
+      : { reply_markup: extra, parse_mode: 'Markdown' };
+    return originalReply(text, options);
   };
   
   // Переопределяем ctx.editMessageText для добавления parse_mode
   ctx.editMessageText = async function(text, extra = {}) {
-    return originalEditMessageText(text, { ...extra, parse_mode: 'Markdown' });
+    // Всегда добавляем parse_mode, независимо от типа extra
+    const options = extra && typeof extra === 'object' 
+      ? { ...extra, parse_mode: 'Markdown' }
+      : { reply_markup: extra, parse_mode: 'Markdown' };
+    return originalEditMessageText(text, options);
   };
   
   return next();
