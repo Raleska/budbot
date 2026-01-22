@@ -15,7 +15,9 @@ export const startHandler = async (ctx) => {
   
   if (ctx.callbackQuery) {
     await ctx.editMessageText(TEXTS.WELCOME, inlineKeyboard);
+    await ctx.telegram.sendMessage(userId, 'Используйте меню внизу для быстрого доступа:', { reply_markup: replyKeyboard.reply_markup });
   } else {
-    await ctx.reply(TEXTS.WELCOME, { ...inlineKeyboard, ...replyKeyboard });
+    await ctx.reply(TEXTS.WELCOME, inlineKeyboard);
+    await ctx.reply('Используйте меню внизу для быстрого доступа:', { reply_markup: replyKeyboard.reply_markup });
   }
 };

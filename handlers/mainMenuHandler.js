@@ -7,14 +7,13 @@ import { Markup } from 'telegraf';
 export const mainMenuHandler = async (ctx) => {
   const userId = ctx.from.id;
   
-  const inlineKeyboard = Markup.inlineKeyboard([
+  const keyboard = Markup.inlineKeyboard([
     [Markup.button.callback(BUTTONS.BACK, 'action:back_to_start')]
   ]);
-  const replyKeyboard = await keyboards.replyKeyboard(userId);
   
   if (ctx.callbackQuery) {
-    await ctx.editMessageText(TEXTS.ABOUT_COMPANY, inlineKeyboard);
+    await ctx.editMessageText(TEXTS.ABOUT_COMPANY, keyboard);
   } else {
-    await ctx.reply(TEXTS.ABOUT_COMPANY, { ...inlineKeyboard, ...replyKeyboard });
+    await ctx.reply(TEXTS.ABOUT_COMPANY, keyboard);
   }
 };

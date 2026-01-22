@@ -94,7 +94,13 @@ async function initializeBot() {
   }
 }
 
-bot.start(startHandler);
+bot.start(async (ctx) => {
+  await startHandler(ctx);
+  
+  const userId = ctx.from.id;
+  const replyKeyboard = await keyboards.replyKeyboard(userId);
+  await ctx.telegram.sendMessage(userId, 'Используйте меню внизу для быстрого доступа:', { reply_markup: replyKeyboard.reply_markup });
+});
 
 bot.action(/^action:/, async (ctx) => {
   const userId = ctx.from.id;
@@ -274,13 +280,11 @@ bot.on('text', async (ctx) => {
     ) {
       await customTimeHandler(ctx);
     } else {
-      const replyKeyboard = await keyboards.replyKeyboard(userId);
-      await ctx.reply('Пожалуйста, используйте кнопки для навигации или отправьте /start для начала', replyKeyboard);
+      await ctx.reply('Пожалуйста, используйте кнопки для навигации или отправьте /start для начала');
     }
   } catch (error) {
     console.error('Ошибка при обработке сообщения:', error);
-    const replyKeyboard = await keyboards.replyKeyboard(userId);
-    await ctx.reply('Произошла ошибка. Попробуйте еще раз или начните заново с /start', replyKeyboard);
+    await ctx.reply('Произошла ошибка. Попробуйте еще раз или начните заново с /start');
   }
 });
 

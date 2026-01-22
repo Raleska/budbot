@@ -47,7 +47,6 @@ export const confirmationHandler = async (ctx) => {
     }
     
     const inlineKeyboard = await keyboards.mainMenuAfterSetup(userId);
-    const replyKeyboard = await keyboards.replyKeyboard(userId);
     
     await ctx.editMessageText(
       TEXTS.REMINDER_SET_SINGLE(
@@ -55,8 +54,11 @@ export const confirmationHandler = async (ctx) => {
         reminderData.time1,
         reminderData.timezone
       ),
-      { ...inlineKeyboard, ...replyKeyboard }
+      inlineKeyboard
     );
+    
+    const replyKeyboard = await keyboards.replyKeyboard(userId);
+    await ctx.telegram.sendMessage(userId, 'Используйте меню внизу для быстрого доступа:', { reply_markup: replyKeyboard.reply_markup });
     
   } else if (state === USER_STATES.CONFIRM_TIME_FIRST) {
     await userStateService.setState(userId, USER_STATES.SELECT_TIME_SECOND);
@@ -108,7 +110,6 @@ export const confirmationHandler = async (ctx) => {
     }
     
     const inlineKeyboard = await keyboards.mainMenuAfterSetup(userId);
-    const replyKeyboard = await keyboards.replyKeyboard(userId);
     
     await ctx.editMessageText(
       TEXTS.REMINDER_SET_DOUBLE(
@@ -117,7 +118,10 @@ export const confirmationHandler = async (ctx) => {
         reminderData.time2,
         reminderData.timezone
       ),
-      { ...inlineKeyboard, ...replyKeyboard }
+      inlineKeyboard
     );
+    
+    const replyKeyboard = await keyboards.replyKeyboard(userId);
+    await ctx.telegram.sendMessage(userId, 'Используйте меню внизу для быстрого доступа:', { reply_markup: replyKeyboard.reply_markup });
   }
 };
