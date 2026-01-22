@@ -294,18 +294,14 @@ const WEBHOOK_SECRET_TOKEN = process.env.WEBHOOK_SECRET_TOKEN;
 
 async function setupMenuButton() {
   try {
-    const { hasReminder } = await import('./services/index.js');
-    
-    bot.telegram.setMyCommands([
+    await bot.telegram.setMyCommands([
       { command: 'start', description: 'Главное меню' },
       { command: 'about', description: 'О компании' },
       { command: 'reminders', description: 'Активные напоминания' },
     ]);
     
-    bot.telegram.setChatMenuButton({
-      menu_button: {
-        type: 'commands',
-      },
+    await bot.telegram.setChatMenuButton(null, {
+      type: 'commands',
     });
     
     console.log('✅ Меню бота настроено');
