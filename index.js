@@ -300,8 +300,10 @@ async function setupMenuButton() {
       { command: 'reminders', description: 'Активные напоминания' },
     ]);
     
-    await bot.telegram.setChatMenuButton(null, {
-      type: 'commands',
+    await bot.telegram.raw('setChatMenuButton', {
+      menu_button: {
+        type: 'commands',
+      },
     });
     
     console.log('✅ Меню бота настроено');
