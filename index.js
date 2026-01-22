@@ -14,6 +14,7 @@ import { USER_STATES } from './config/states.js';
 import { BUTTONS, TEXTS } from './config/texts.js';
 import { keyboards } from './utils/keyboards.js';
 import { Markup } from 'telegraf';
+import { setupAdminCommands } from './utils/adminCommands.js';
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 
