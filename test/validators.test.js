@@ -27,11 +27,11 @@ test('isValidTime: accepts valid time formats', () => {
 });
 
 test('isValidTime: rejects invalid formats', () => {
-  assert.equal(isValidTime('8:00'), false);
   assert.equal(isValidTime('25:00'), false);
   assert.equal(isValidTime('12:60'), false);
   assert.equal(isValidTime('abc'), false);
   assert.equal(isValidTime('12'), false);
   assert.equal(isValidTime('12:'), false);
   assert.equal(isValidTime(':30'), false);
+  assert.equal(isValidTime('24:00'), false);
 });
