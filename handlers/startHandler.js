@@ -10,14 +10,11 @@ export const startHandler = async (ctx) => {
   await userStateService.reset(userId);
   await userStateService.setState(userId, USER_STATES.START);
 
-  const inlineKeyboard = await keyboards.mainMenu(userId);
-  const replyKeyboard = await keyboards.replyKeyboard(userId);
+  const keyboard = await keyboards.mainMenu(userId);
   
   if (ctx.callbackQuery) {
-    await ctx.editMessageText(TEXTS.WELCOME, inlineKeyboard);
-    await ctx.telegram.sendMessage(userId, 'Используйте меню внизу для быстрого доступа:', { reply_markup: replyKeyboard.reply_markup });
+    await ctx.editMessageText(TEXTS.WELCOME, keyboard);
   } else {
-    await ctx.reply(TEXTS.WELCOME, inlineKeyboard);
-    await ctx.reply('Используйте меню внизу для быстрого доступа:', { reply_markup: replyKeyboard.reply_markup });
+    await ctx.reply(TEXTS.WELCOME, keyboard);
   }
 };

@@ -94,12 +94,14 @@ async function initializeBot() {
   }
 }
 
-bot.start(async (ctx) => {
-  await startHandler(ctx);
-  
-  const userId = ctx.from.id;
-  const replyKeyboard = await keyboards.replyKeyboard(userId);
-  await ctx.telegram.sendMessage(userId, 'Используйте меню внизу для быстрого доступа:', { reply_markup: replyKeyboard.reply_markup });
+bot.start(startHandler);
+
+bot.command('about', async (ctx) => {
+  await mainMenuHandler(ctx);
+});
+
+bot.command('reminders', async (ctx) => {
+  await activeRemindersHandler(ctx);
 });
 
 bot.action(/^action:/, async (ctx) => {
@@ -257,22 +259,10 @@ bot.action(/^action:/, async (ctx) => {
 bot.on('text', async (ctx) => {
   const userId = ctx.from.id;
   const state = await userStateService.getState(userId);
-  const text = ctx.message.text;
   
   await trackInteraction(userId, ctx.from);
 
   try {
-    if (text === BUTTONS.ABOUT_COMPANY) {
-      await mainMenuHandler(ctx);
-      return;
-    } else if (text === BUTTONS.START_VITAMINS) {
-      await dosageHandler(ctx);
-      return;
-    } else if (text === BUTTONS.ACTIVE_REMINDERS) {
-      await activeRemindersHandler(ctx);
-      return;
-    }
-    
     if (
       state === USER_STATES.ENTER_CUSTOM_TIME_SINGLE ||
       state === USER_STATES.ENTER_CUSTOM_TIME_FIRST ||
@@ -302,7 +292,31 @@ const WEBHOOK_PORT = parseInt(process.env.WEBHOOK_PORT || '3000');
 const WEBHOOK_PATH = process.env.WEBHOOK_PATH || '/webhook';
 const WEBHOOK_SECRET_TOKEN = process.env.WEBHOOK_SECRET_TOKEN;
 
+async function setupMenuButton() {
+  try {
+    const { hasReminder } = await import('./services/index.js');
+    
+    bot.telegram.setMyCommands([
+      { command: 'start', description: 'Главное меню' },
+      { command: 'about', description: 'О компании' },
+      { command: 'reminders', description: 'Активные напоминания' },
+    ]);
+    
+    bot.telegram.setChatMenuButton({
+      menu_button: {
+        type: 'commands',
+      },
+    });
+    
+    console.log('✅ Меню бота настроено');
+  } catch (error) {
+    console.error('⚠️ Ошибка при настройке меню:', error.message);
+  }
+}
+
 initializeBot().then(async () => {
+  await setupMenuButton();
+  
   if (USE_WEBHOOK && WEBHOOK_URL) {
     console.log('🌐 Запуск в режиме вебхука...');
     const { createWebhookServer, setWebhook } = await import('./utils/webhook.js');
