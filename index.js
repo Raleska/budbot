@@ -283,7 +283,6 @@ bot.catch((err, ctx) => {
   ctx.reply('Произошла ошибка. Попробуйте еще раз.');
 });
 
-import { setupAdminCommands } from './utils/adminCommands.js';
 setupAdminCommands(bot);
 
 const USE_WEBHOOK = process.env.USE_WEBHOOK === 'true';
