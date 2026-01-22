@@ -5,9 +5,35 @@ import { userRepository } from '../database/repositories/userRepository.js';
 
 const cronJobs = new Map();
 let botInstance = null;
+let cronAdapter = cron;
+let reminderRepo = reminderRepository;
 
 export function setBotInstance(bot) {
   botInstance = bot;
+}
+
+// Test/diagnostic hooks (not used in production flow)
+export function __setCronAdapter(adapter) {
+  cronAdapter = adapter;
+}
+
+export function __setReminderRepository(repo) {
+  reminderRepo = repo;
+}
+
+export function __debugGetJobsCount(userId) {
+  const jobs = cronJobs.get(String(userId));
+  return Array.isArray(jobs) ? jobs.length : 0;
+}
+
+export function __debugReset() {
+  for (const jobs of cronJobs.values()) {
+    if (Array.isArray(jobs)) jobs.forEach((j) => j?.stop?.());
+  }
+  cronJobs.clear();
+  botInstance = null;
+  cronAdapter = cron;
+  reminderRepo = reminderRepository;
 }
 
 function getTimezoneOffset(timezone) {
@@ -104,33 +130,34 @@ async function sendReminder(userId, reminder) {
 }
 
 export async function addReminder(botOrTelegram, userId, reminderData) {
+  const userKey = String(userId);
   if (botOrTelegram && botOrTelegram.telegram) {
     setBotInstance(botOrTelegram);
   } else if (botOrTelegram) {
     setBotInstance({ telegram: botOrTelegram });
   }
   
-  const existingJobs = cronJobs.get(userId);
+  const existingJobs = cronJobs.get(userKey);
   if (existingJobs) {
     existingJobs.forEach(job => job.stop());
-    cronJobs.delete(userId);
+    cronJobs.delete(userKey);
   }
   
-  await reminderRepository.upsertReminder(userId, reminderData);
+  await reminderRepo.upsertReminder(userId, reminderData);
   
   const jobs = [];
   
   const utcTime1 = convertToUTC(reminderData.time1, reminderData.timezone);
   const cronExpr1 = createCronExpression(utcTime1);
   
-  const job1 = cron.schedule(cronExpr1, async () => {
+  const job1 = cronAdapter.schedule(cronExpr1, async () => {
     const now = new Date();
-    console.log(`⏰ Cron job сработал для пользователя ${userId} в ${now.toISOString()} (UTC)`);
-    const reminder = await reminderRepository.getReminderByUserId(userId);
+    console.log(`⏰ Cron job сработал для пользователя ${userKey} в ${now.toISOString()} (UTC)`);
+    const reminder = await reminderRepo.getReminderByUserId(userId);
     if (reminder && reminder.enabled) {
       await sendReminder(userId, reminder);
     } else {
-      console.log(`⚠️ Напоминание для пользователя ${userId} не найдено или отключено`);
+      console.log(`⚠️ Напоминание для пользователя ${userKey} не найдено или отключено`);
     }
   }, {
     scheduled: true,
@@ -144,14 +171,14 @@ export async function addReminder(botOrTelegram, userId, reminderData) {
     const utcTime2 = convertToUTC(reminderData.time2, reminderData.timezone);
     cronExpr2 = createCronExpression(utcTime2);
     
-    const job2 = cron.schedule(cronExpr2, async () => {
+    const job2 = cronAdapter.schedule(cronExpr2, async () => {
       const now = new Date();
-      console.log(`⏰ Cron job сработал для пользователя ${userId} (time2) в ${now.toISOString()} (UTC)`);
-      const reminder = await reminderRepository.getReminderByUserId(userId);
+      console.log(`⏰ Cron job сработал для пользователя ${userKey} (time2) в ${now.toISOString()} (UTC)`);
+      const reminder = await reminderRepo.getReminderByUserId(userId);
       if (reminder && reminder.enabled) {
         await sendReminder(userId, reminder);
       } else {
-        console.log(`⚠️ Напоминание для пользователя ${userId} не найдено или отключено`);
+        console.log(`⚠️ Напоминание для пользователя ${userKey} не найдено или отключено`);
       }
     }, {
       scheduled: true,
@@ -161,11 +188,11 @@ export async function addReminder(botOrTelegram, userId, reminderData) {
     jobs.push(job2);
   }
   
-  cronJobs.set(userId, jobs);
+  cronJobs.set(userKey, jobs);
   
   const utcTime2 = reminderData.time2 ? convertToUTC(reminderData.time2, reminderData.timezone) : null;
   
-  console.log(`✅ Напоминание добавлено для пользователя ${userId}:`);
+  console.log(`✅ Напоминание добавлено для пользователя ${userKey}:`);
   console.log(`   Локальное время: ${reminderData.time1}${reminderData.time2 ? ` / ${reminderData.time2}` : ''}`);
   console.log(`   Часовой пояс: ${reminderData.timezone}`);
   console.log(`   UTC время: ${utcTime1}${utcTime2 ? ` / ${utcTime2}` : ''}`);
@@ -173,30 +200,31 @@ export async function addReminder(botOrTelegram, userId, reminderData) {
 }
 
 export async function removeReminder(userId) {
-  const jobs = cronJobs.get(userId);
+  const userKey = String(userId);
+  const jobs = cronJobs.get(userKey);
   if (jobs) {
     jobs.forEach(job => job.stop());
-    cronJobs.delete(userId);
+    cronJobs.delete(userKey);
   }
-  await reminderRepository.deleteReminder(userId);
-  console.log(`🗑️ Напоминание удалено для пользователя ${userId}`);
+  await reminderRepo.deleteReminder(userId);
+  console.log(`🗑️ Напоминание удалено для пользователя ${userKey}`);
 }
 
 export async function getReminder(userId) {
-  return await reminderRepository.getReminderByUserId(userId);
+  return await reminderRepo.getReminderByUserId(userId);
 }
 
 export async function hasReminder(userId) {
-  return await reminderRepository.hasActiveReminder(userId);
+  return await reminderRepo.hasActiveReminder(userId);
 }
 
 export async function getAllReminders() {
-  return await reminderRepository.getAllActiveReminders();
+  return await reminderRepo.getAllActiveReminders();
 }
 
 export async function loadAllReminders(bot) {
   setBotInstance(bot);
-  const reminders = await reminderRepository.getAllActiveReminders();
+  const reminders = await reminderRepo.getAllActiveReminders();
   let loadedCount = 0;
   let errorCount = 0;
   

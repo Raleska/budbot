@@ -10,6 +10,7 @@
     "start:webhook": "cross-env USE_WEBHOOK=true node index.js",
     "start:webhook:memory": "cross-env USE_WEBHOOK=true USE_DATABASE=false node index.js",
     "dev": "node --watch index.js",
+    "test": "node --test",
     "webhook:set": "node scripts/setWebhook.js",
     "webhook:delete": "node scripts/deleteWebhook.js",
     "webhook:info": "node scripts/getWebhookInfo.js",
