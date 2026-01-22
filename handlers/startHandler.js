@@ -10,11 +10,12 @@ export const startHandler = async (ctx) => {
   await userStateService.reset(userId);
   await userStateService.setState(userId, USER_STATES.START);
 
-  const keyboard = await keyboards.mainMenu(userId);
+  const inlineKeyboard = await keyboards.mainMenu(userId);
+  const replyKeyboard = await keyboards.replyKeyboard(userId);
   
   if (ctx.callbackQuery) {
-    await ctx.editMessageText(TEXTS.WELCOME, keyboard);
+    await ctx.editMessageText(TEXTS.WELCOME, inlineKeyboard);
   } else {
-    await ctx.reply(TEXTS.WELCOME, keyboard);
+    await ctx.reply(TEXTS.WELCOME, { ...inlineKeyboard, ...replyKeyboard });
   }
 };

@@ -12,12 +12,13 @@ export const activeRemindersHandler = async (ctx) => {
   
   if (!reminder) {
     const message = TEXTS.NO_ACTIVE_REMINDERS;
-    const keyboard = await keyboards.mainMenu(userId);
+    const inlineKeyboard = await keyboards.mainMenu(userId);
+    const replyKeyboard = await keyboards.replyKeyboard(userId);
     
     if (ctx.callbackQuery) {
-      await ctx.editMessageText(message, keyboard);
+      await ctx.editMessageText(message, inlineKeyboard);
     } else {
-      await ctx.reply(message, keyboard);
+      await ctx.reply(message, { ...inlineKeyboard, ...replyKeyboard });
     }
     return;
   }
@@ -40,12 +41,13 @@ export const activeRemindersHandler = async (ctx) => {
     Markup.button.callback(BUTTONS.MAIN_MENU, 'action:main_menu'),
   ]);
   
-  const keyboard = Markup.inlineKeyboard(buttons);
+  const inlineKeyboard = Markup.inlineKeyboard(buttons);
+  const replyKeyboard = await keyboards.replyKeyboard(userId);
   const message = TEXTS.ACTIVE_REMINDERS_LIST;
   
   if (ctx.callbackQuery) {
-    await ctx.editMessageText(message, keyboard);
+    await ctx.editMessageText(message, inlineKeyboard);
   } else {
-    await ctx.reply(message, keyboard);
+    await ctx.reply(message, { ...inlineKeyboard, ...replyKeyboard });
   }
 };

@@ -237,6 +237,8 @@ bot.action(/^action:/, async (ctx) => {
       await confirmationHandler(ctx);
     } else if (callbackData === 'action:main_menu') {
       await startHandler(ctx);
+    } else if (callbackData === 'action:back_to_start') {
+      await startHandler(ctx);
     }
     
     await ctx.answerCbQuery();
@@ -249,10 +251,22 @@ bot.action(/^action:/, async (ctx) => {
 bot.on('text', async (ctx) => {
   const userId = ctx.from.id;
   const state = await userStateService.getState(userId);
+  const text = ctx.message.text;
   
   await trackInteraction(userId, ctx.from);
 
   try {
+    if (text === BUTTONS.ABOUT_COMPANY) {
+      await mainMenuHandler(ctx);
+      return;
+    } else if (text === BUTTONS.START_VITAMINS) {
+      await dosageHandler(ctx);
+      return;
+    } else if (text === BUTTONS.ACTIVE_REMINDERS) {
+      await activeRemindersHandler(ctx);
+      return;
+    }
+    
     if (
       state === USER_STATES.ENTER_CUSTOM_TIME_SINGLE ||
       state === USER_STATES.ENTER_CUSTOM_TIME_FIRST ||
@@ -260,11 +274,13 @@ bot.on('text', async (ctx) => {
     ) {
       await customTimeHandler(ctx);
     } else {
-      await ctx.reply('Пожалуйста, используйте кнопки для навигации или отправьте /start для начала');
+      const replyKeyboard = await keyboards.replyKeyboard(userId);
+      await ctx.reply('Пожалуйста, используйте кнопки для навигации или отправьте /start для начала', replyKeyboard);
     }
   } catch (error) {
     console.error('Ошибка при обработке сообщения:', error);
-    await ctx.reply('Произошла ошибка. Попробуйте еще раз или начните заново с /start');
+    const replyKeyboard = await keyboards.replyKeyboard(userId);
+    await ctx.reply('Произошла ошибка. Попробуйте еще раз или начните заново с /start', replyKeyboard);
   }
 });
 

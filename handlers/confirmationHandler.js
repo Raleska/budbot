@@ -46,13 +46,16 @@ export const confirmationHandler = async (ctx) => {
       return;
     }
     
+    const inlineKeyboard = await keyboards.mainMenuAfterSetup(userId);
+    const replyKeyboard = await keyboards.replyKeyboard(userId);
+    
     await ctx.editMessageText(
       TEXTS.REMINDER_SET_SINGLE(
         reminderData.capsules,
         reminderData.time1,
         reminderData.timezone
       ),
-      await keyboards.mainMenuAfterSetup(userId)
+      { ...inlineKeyboard, ...replyKeyboard }
     );
     
   } else if (state === USER_STATES.CONFIRM_TIME_FIRST) {
@@ -104,6 +107,9 @@ export const confirmationHandler = async (ctx) => {
       return;
     }
     
+    const inlineKeyboard = await keyboards.mainMenuAfterSetup(userId);
+    const replyKeyboard = await keyboards.replyKeyboard(userId);
+    
     await ctx.editMessageText(
       TEXTS.REMINDER_SET_DOUBLE(
         reminderData.capsules,
@@ -111,7 +117,7 @@ export const confirmationHandler = async (ctx) => {
         reminderData.time2,
         reminderData.timezone
       ),
-      await keyboards.mainMenuAfterSetup(userId)
+      { ...inlineKeyboard, ...replyKeyboard }
     );
   }
 };
