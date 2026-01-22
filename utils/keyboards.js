@@ -65,6 +65,4 @@ export const keyboards = {
   async mainMenuAfterSetup(userId = null) {
     return await keyboards.mainMenu(userId);
   },
-
-},
 };
