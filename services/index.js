@@ -22,6 +22,7 @@ export const {
   hasReminder,
   getAllReminders,
   loadAllReminders,
+  scheduleSnooze,
 } = reminderService;
 
 export const {

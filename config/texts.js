@@ -45,7 +45,8 @@ export const TEXTS = {
     replacePlaceholders(textsData.TEXTS.REMINDER_SET_DOUBLE, { time1, time2, timezone }),
   
   REMINDER_MESSAGE: (capsules) => textsData.TEXTS.REMINDER_MESSAGE,
-  
+  REMINDER_TAKEN_TEXT: textsData.TEXTS.REMINDER_TAKEN_TEXT,
+
   ACTIVE_REMINDERS_LIST: textsData.TEXTS.ACTIVE_REMINDERS_LIST,
   
   REMINDER_DETAILS: (capsules, time1, time2 = null) => {

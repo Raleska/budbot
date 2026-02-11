@@ -1,8 +1,10 @@
 import cron from 'node-cron';
-import { TEXTS } from '../config/texts.js';
+import { Markup } from 'telegraf';
+import { TEXTS, BUTTONS } from '../config/texts.js';
 
 const reminders = new Map();
 const cronJobs = new Map();
+const snoozeTimeouts = new Map();
 let botInstance = null;
 let cronAdapter = cron;
 
@@ -21,6 +23,8 @@ export function __debugGetJobsCount(userId) {
 }
 
 export function __debugReset() {
+  for (const id of snoozeTimeouts.values()) clearTimeout(id);
+  snoozeTimeouts.clear();
   for (const jobs of cronJobs.values()) {
     if (Array.isArray(jobs)) jobs.forEach((j) => j?.stop?.());
   }
@@ -92,15 +96,27 @@ function createCronExpression(time) {
   return `${minutes} ${hours} * * *`;
 }
 
+function reminderReplyMarkup() {
+  return Markup.inlineKeyboard([
+    [
+      Markup.button.callback(BUTTONS.REMINDER_BTN_TAKEN, 'action:reminder_taken'),
+      Markup.button.callback(BUTTONS.REMINDER_BTN_SNOOZE, 'action:reminder_snooze30'),
+    ],
+  ]);
+}
+
 async function sendReminder(userId, reminder) {
   if (!botInstance) {
     console.error(`❌ Bot instance не установлен, невозможно отправить напоминание пользователю ${userId}`);
     return;
   }
-  
+
   try {
     const message = TEXTS.REMINDER_MESSAGE(reminder.capsules);
-    await botInstance.telegram.sendMessage(userId, message, { parse_mode: 'HTML' });
+    await botInstance.telegram.sendMessage(userId, message, {
+      parse_mode: 'HTML',
+      reply_markup: reminderReplyMarkup().reply_markup,
+    });
     console.log(`📨 Напоминание отправлено пользователю ${userId} в ${new Date().toISOString()}`);
   } catch (error) {
     console.error(`❌ Ошибка при отправке напоминания пользователю ${userId}:`, error);
@@ -109,6 +125,20 @@ async function sendReminder(userId, reminder) {
       await removeReminder(userId);
     }
   }
+}
+
+const SNOOZE_MS = 30 * 60 * 1000;
+
+export function scheduleSnooze(userId) {
+  const userKey = String(userId);
+  const existing = snoozeTimeouts.get(userKey);
+  if (existing) clearTimeout(existing);
+  const timeoutId = setTimeout(async () => {
+    snoozeTimeouts.delete(userKey);
+    const reminder = reminders.get(userKey);
+    if (reminder) await sendReminder(userId, reminder);
+  }, SNOOZE_MS);
+  snoozeTimeouts.set(userKey, timeoutId);
 }
 
 export async function addReminder(botOrTelegram, userId, reminderData) {
@@ -182,6 +212,11 @@ export async function addReminder(botOrTelegram, userId, reminderData) {
 
 export async function removeReminder(userId) {
   const userKey = String(userId);
+  const snoozeId = snoozeTimeouts.get(userKey);
+  if (snoozeId) {
+    clearTimeout(snoozeId);
+    snoozeTimeouts.delete(userKey);
+  }
   const jobs = cronJobs.get(userKey);
   if (jobs) {
     jobs.forEach(job => job.stop());

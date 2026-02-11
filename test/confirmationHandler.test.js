@@ -1,8 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { USER_STATES } from '../config/states.js';
+import { __debugReset } from '../services/reminderServiceMemory.js';
 
 process.env.USE_DATABASE = 'false';
+
+test.after(() => {
+  __debugReset();
+});
 
 function createMockCtx(userId) {
   const sentMessages = [];

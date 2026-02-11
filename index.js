@@ -55,6 +55,7 @@ const {
   getReminder,
   loadAllReminders,
   removeReminder,
+  scheduleSnooze,
 } = await import('./services/index.js');
 
 async function initializeBot() {
@@ -248,9 +249,20 @@ bot.action(/^action:/, async (ctx) => {
       await startHandler(ctx);
     } else if (callbackData === 'action:back_to_start') {
       await startHandler(ctx);
+    } else if (callbackData === 'action:reminder_taken') {
+      await ctx.answerCbQuery();
+      const takenText = TEXTS.REMINDER_TAKEN_TEXT;
+      try {
+        await ctx.editMessageText(takenText, { reply_markup: { inline_keyboard: [] } });
+      } catch (_) {}
+    } else if (callbackData === 'action:reminder_snooze30') {
+      await ctx.answerCbQuery('Напоминание через 30 минут');
+      scheduleSnooze(ctx.from.id);
     }
     
-    await ctx.answerCbQuery();
+    if (callbackData !== 'action:reminder_taken' && callbackData !== 'action:reminder_snooze30') {
+      await ctx.answerCbQuery();
+    }
   } catch (error) {
     console.error('Ошибка при обработке callback:', error);
     await ctx.answerCbQuery('Произошла ошибка');

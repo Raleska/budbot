@@ -65,4 +65,12 @@ export const keyboards = {
   async mainMenuAfterSetup(userId = null) {
     return await keyboards.mainMenu(userId);
   },
+
+  async replyKeyboard(userId = null) {
+    const rows = [[BUTTONS.ABOUT_COMPANY, BUTTONS.START_VITAMINS]];
+    if (userId && await hasReminder(userId)) {
+      rows.push([BUTTONS.ACTIVE_REMINDERS]);
+    }
+    return Markup.keyboard(rows).resize().persistent();
+  },
 };
