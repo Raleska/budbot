@@ -258,6 +258,10 @@ bot.action(/^action:/, async (ctx) => {
     } else if (callbackData === 'action:reminder_snooze30') {
       await ctx.answerCbQuery('Напоминание через 30 минут');
       scheduleSnooze(ctx.from.id);
+      const snoozedText = TEXTS.REMINDER_SNOOZED_TEXT;
+      try {
+        await ctx.editMessageText(snoozedText, { reply_markup: { inline_keyboard: [] } });
+      } catch (_) {}
     }
     
     if (callbackData !== 'action:reminder_taken' && callbackData !== 'action:reminder_snooze30') {
