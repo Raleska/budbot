@@ -6,6 +6,7 @@ import { userRepository } from '../database/repositories/userRepository.js';
 
 const cronJobs = new Map();
 const snoozeTimeouts = new Map();
+const lastReminderMessage = new Map();
 let botInstance = null;
 let cronAdapter = cron;
 let reminderRepo = reminderRepository;
@@ -29,6 +30,7 @@ export function __debugGetJobsCount(userId) {
 }
 
 export function __debugReset() {
+  lastReminderMessage.clear();
   for (const id of snoozeTimeouts.values()) clearTimeout(id);
   snoozeTimeouts.clear();
   for (const jobs of cronJobs.values()) {
@@ -129,12 +131,24 @@ async function sendReminder(userId, reminder) {
     return;
   }
 
+  const userKey = String(userId);
+  const prev = lastReminderMessage.get(userKey);
+  if (prev) {
+    try {
+      await botInstance.telegram.editMessageReplyMarkup(prev.chatId, prev.messageId, {
+        reply_markup: { inline_keyboard: [] },
+      });
+    } catch (_) {}
+    lastReminderMessage.delete(userKey);
+  }
+
   try {
     const message = TEXTS.REMINDER_MESSAGE(reminder.capsules);
-    await botInstance.telegram.sendMessage(userId, message, {
+    const sent = await botInstance.telegram.sendMessage(userId, message, {
       parse_mode: 'HTML',
       reply_markup: reminderReplyMarkup().reply_markup,
     });
+    lastReminderMessage.set(userKey, { chatId: sent.chat.id, messageId: sent.message_id });
     console.log(`📨 Напоминание отправлено пользователю ${userId} в ${new Date().toISOString()}`);
   } catch (error) {
     console.error(`❌ Ошибка при отправке напоминания пользователю ${userId}:`, error);
@@ -231,6 +245,7 @@ export async function addReminder(botOrTelegram, userId, reminderData) {
 
 export async function removeReminder(userId) {
   const userKey = String(userId);
+  lastReminderMessage.delete(userKey);
   const snoozeId = snoozeTimeouts.get(userKey);
   if (snoozeId) {
     clearTimeout(snoozeId);
