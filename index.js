@@ -256,7 +256,7 @@ bot.action(/^action:/, async (ctx) => {
         await ctx.editMessageText(takenText, { reply_markup: { inline_keyboard: [] } });
       } catch (_) {}
     } else if (callbackData === 'action:reminder_snooze30') {
-      await ctx.answerCbQuery('Напоминание через 30 минут');
+      await ctx.answerCbQuery('Готово');
       scheduleSnooze(ctx.from.id);
       const snoozedText = TEXTS.REMINDER_SNOOZED_TEXT;
       try {
