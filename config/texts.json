@@ -40,7 +40,7 @@
     "EDIT_CAPSULES": "✏️ Изменить частоту",
     "EDIT_TIME": "⏰ Изменить время",
     "DELETE_REMINDER": "❌ Отменить напоминание",
-    "REMINDER_BTN_TAKEN": "✓ Принял",
+    "REMINDER_BTN_TAKEN": "✓ Готово",
     "REMINDER_BTN_SNOOZE": "⏰ Отложить на 30 мин"
   },
   "TIMEZONES": [
